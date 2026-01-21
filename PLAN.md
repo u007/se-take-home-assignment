@@ -1,4 +1,4 @@
-# FeedMe Order Controller - TanStack Start + TanStack DB + Drizzle + Turso Implementation Plan
+# FeedMe Order Controller - TanStack Start + TanStack DB + Drizzle + LibSQL/Turso Implementation Plan
 
 ## Requirements Analysis
 
@@ -55,7 +55,7 @@
 7. **Foreign Keys**: Proper FK constraints with cascades
 8. **Soft Delete**: `deleted_at` timestamp, cascade rules that preserve orders when user deleted
 9. **Unique Constraints**: Consider soft delete (unique only on non-deleted records)
-10. **CLI**: Use TanStack CLI to bootstrap project
+10. **Bootstrap**: Project already bootstrapped; keep the existing TanStack Start setup
 11. **PWA**: Progressive Web App with offline capabilities
 12. **Offline Sync**: Local data processing with sync to Turso when online
 13. **Bot Processing**: Client-side (browser-based using React timers)
@@ -67,48 +67,42 @@
 19. **Auth**: Sample users with roles (NORMAL, VIP, MANAGER, BOT)
 20. **Hybrid Mode**: Some features work offline, others require online
 
-## Package Versions & Compatibility
+## Package Versions & Compatibility (Aligned to Current Repo)
 
 **Core Framework:**
-- `@tanstack/start@latest` - Latest RC version (currently ~0.x)
-- `react@^18.3.0` - React 18.3+ required
-- `vite@^6.0.0` - Vite 6.x for latest features
+- `@tanstack/react-start@^1.132.0` - TanStack Start (current stack)
+- `react@^19.2.0` / `react-dom@^19.2.0`
+- `vite@^7.1.7`
 
 **Styling:**
-- `tailwindcss@^4.1.7` - Tailwind CSS v4 (latest stable, not beta)
-- `@tailwindcss/vite@^4.1.7` - Vite plugin for Tailwind v4
-- `shadcn@latest` - CLI tool for shadcn/ui
-  - **Note**: shadcn/ui is **compatible with Tailwind CSS v4** via new `@tailwindcss/vite` plugin
-  - shadcn/ui components work with both Tailwind v3 and v4
+- `tailwindcss@^4.0.6`
+- `@tailwindcss/vite@^4.0.6`
+- shadcn/ui components (already in `pos/src/components/ui`)
 
-**Database:**
-- `drizzle-orm@^0.45.1` - Latest stable version (not beta)
-- `drizzle-kit@^0.31.7` - Latest Kit version
-- `@libsql/client@^0.14.0` - Latest Turso/LibSQL client
-  - **Important**: Use stable `v0.x` versions, **NOT** `v1.0.0-beta` (beta still has bugs)
+**Database & Auth:**
+- `drizzle-orm@^0.45.0`
+- `drizzle-kit@^0.31.8`
+- `@libsql/client@^0.15.16` (Turso/LibSQL)
+- `better-sqlite3@^12.5.0` (local SQLite)
+- `better-auth@^1.4.12`
 
 **Validation:**
-- `zod@^3.25.1` - Zod v3.25.1+ (recommended for stability)
-  - **Zod 4 Support**: Zod v4 is available but requires `drizzle-zod@^0.8.1` for compatibility
-  - **Recommendation**: Use Zod v3.25.1+ unless you need Zod v4 features
-  - If using Zod v4, install: `zod@^4.3.5` + `drizzle-zod@^0.8.1`
+- `zod@^4.3.5` (use Zod v4 consistently)
 
 **TanStack Ecosystem:**
-- `@tanstack/react-query@^5.62.0` - TanStack Query v5 (latest stable)
-- `@tanstack/react-form@latest` - Latest stable form library
-- `@tanstack/store@latest` - Latest Store version
-- `@tanstack/db@latest` - TanStack DB for type-safe database queries
+- `@tanstack/react-query@^5.66.5`
+- `@tanstack/react-form@^1.0.0`
+- `@tanstack/store@^0.8.0` and `@tanstack/react-store@^0.8.0`
+- `@tanstack/react-router@^1.132.0`
+- `@tanstack/db@latest` + TanStack DB Drizzle adapter (add per TanStack DB docs)
 
-**PWA & Offline:**
-- `vite-plugin-pwa@^0.21.0` - Latest PWA plugin for Vite
-- `dexie@^4.0.0` - IndexedDB wrapper
-- `workbox-window@^7.0.0` - Service worker utilities
+**PWA & Offline (additions for frontend track):**
+- `vite-plugin-pwa`
+- `dexie`
+- `workbox-window`
 
-**UUID Generation:**
-- `uuid@^11.0.0` - UUID library with v7 support (use `uuidv7()` function)
-
-**Utilities:**
-- `dotenv@^16.4.0` - Environment variables
+**UUID Generation (add if required):**
+- `uuid@^11.0.0` with `uuidv7()`
 
 ## Technical Architecture
 
@@ -188,10 +182,10 @@ CREATE TABLE users (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   deleted_at DATETIME, -- Soft delete timestamp
-  UNIQUE(username, deleted_at) -- Unique only for non-deleted (deleted_at IS NULL)
 );
 
 -- Partial unique index for username (excludes soft-deleted)
+-- Note: uniqueness is enforced only via partial unique indexes (no UNIQUE constraints in table definitions)
 CREATE UNIQUE INDEX idx_users_username_active ON users(username) WHERE deleted_at IS NULL;
 
 -- Table: orders
@@ -208,7 +202,6 @@ CREATE TABLE orders (
   deleted_at DATETIME, -- Soft delete timestamp
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL, -- Preserve orders if user deleted
   FOREIGN KEY (bot_id) REFERENCES bots(id) ON DELETE SET NULL, -- Unassign if bot deleted
-  UNIQUE(order_number, deleted_at) -- Unique only for non-deleted
 );
 
 -- Partial unique index for order_number (excludes soft-deleted)
@@ -300,35 +293,22 @@ INSERT INTO users (id, username, password_hash, role) VALUES
 
 ### Phase 1: Project Setup & Infrastructure
 
-1. **Bootstrap TanStack Start project**
+1. **Confirm current stack (already bootstrapped)**
+   - TanStack Start app lives in `pos/` with React 19, Vite 7, Tailwind v4, Zod v4
+   - Keep versions aligned to `pos/package.json`
 
+2. **Install missing dependencies (frontend track additions only)**
    ```bash
-   pnpm create @tanstack/start@latest feedme-order-controller --tailwind --add-ons shadcn
-   ```
+   # TanStack DB + Drizzle adapter (per TanStack DB docs)
+   pnpm --filter pos add @tanstack/db@latest
 
-   - This creates a project with TypeScript, Tailwind CSS v4, and shadcn/ui pre-configured
-   - Automatically sets up `@tailwindcss/vite` plugin for Tailwind v4
+   # Offline/PWA tooling
+   pnpm --filter pos add vite-plugin-pwa dexie workbox-window
 
-2. **Install Additional Dependencies**
-   
-   ```bash
-   # Core dependencies
-   pnpm add drizzle-orm@^0.45.1 @libsql/client@^0.14.0 dotenv@^16.4.0
-   pnpm add zod@^3.25.1 uuid@^11.0.0
-   pnpm add @tanstack/react-query@^5.62.0 @tanstack/react-form@latest @tanstack/store@latest
-   pnpm add @tanstack/db@latest
-   
-   # PWA & Offline
-   pnpm add vite-plugin-pwa@^0.21.0 dexie@^4.0.0 workbox-window@^7.0.0
-   
-   # Dev dependencies
-   pnpm add -D drizzle-kit@^0.31.7
+   # UUID v7 (if required for offline-safe IDs)
+   pnpm --filter pos add uuid@^11.0.0
    ```
-
-   **Optional - If using Zod v4:**
-   ```bash
-   pnpm add zod@^4.3.5 drizzle-zod@^0.8.1
-   ```
+   - Add the TanStack DB Drizzle adapter package per the TanStack DB docs (keep versions aligned to the repo).
 
 3. **Add shadcn/ui Components**
    ```bash
@@ -338,25 +318,29 @@ INSERT INTO users (id, username, password_hash, role) VALUES
    - shadcn/ui automatically works with Tailwind v4 via `@tailwindcss/vite`
 
 4. **Configure Drizzle with Turso**
-   - Create `app/db/schema.ts` with users, orders, and bots tables
+   - Create `pos/src/db/schema.ts` with users, orders, and bots tables
    - Use UUID7 for all primary keys (via `uuid` package's `uuidv7()` function)
    - Add `deleted_at` for soft delete
    - Configure proper FK cascades (SET NULL to preserve orders)
-   - Create `app/db/index.ts` for Turso connection
+   - Create `pos/src/db/index.ts` for Turso connection
+   - Use `pos/drizzle.config.ts` with `drizzle-kit` scripts from `pos/package.json`
    - Add `.env.local` support for Turso credentials
    - Create seed script for sample users with UUID7 IDs
 
-5. **Setup TanStack DB**
-   - Create `app/db/tanstack-db.ts` to initialize TanStack DB with Drizzle adapter
-   - Generate TypeScript types from Drizzle schema
-   - Create type-safe query builders for users, orders, and bots
-   - Configure mutations (insert, update, delete) with proper types
+5. **Setup TanStack DB (tooling + adapter wiring)**
+   - Create a Drizzle client singleton (LibSQL in prod, SQLite in dev) in `pos/src/db/index.ts`
+   - Add a TanStack DB singleton in `pos/src/db/tanstack-db.ts` using the Drizzle adapter
+     - One `getInstance()` for the Drizzle client
+     - One `getInstance()` for the TanStack DB wrapper
+   - Register Drizzle schema tables with TanStack DB and expose typed query/mutation helpers
+   - Keep schema/type generation via Drizzle (`drizzle-kit`) as the source of truth
+   - Ensure all DB access in routes/hooks goes through the TanStack DB layer (no direct Drizzle usage outside the DB module)
 
 6. **Setup TanStack Store for State Management**
    - Install: `@tanstack/store`
-   - Create `app/store/auth.ts` for user authentication state
-   - Create `app/store/order.ts` for shared order state
-   - Create `app/store/bot.ts` for bot state including timers
+   - Create `pos/src/store/auth.ts` for user authentication state
+   - Create `pos/src/store/order.ts` for shared order state
+   - Create `pos/src/store/bot.ts` for bot state including timers
      - Bot list with status (IDLE/PROCESSING)
      - Bot timer state (remaining milliseconds per bot)
      - Current order assignment per bot
@@ -371,34 +355,39 @@ INSERT INTO users (id, username, password_hash, role) VALUES
 
 7. **Setup Offline Storage**
    - Install `dexie` (IndexedDB wrapper)
-   - Create `app/db/offline.ts` for local storage schema
-   - Create sync manager `app/lib/sync-manager.ts`
+   - Create `pos/src/db/offline.ts` for local storage schema
+   - Create sync manager `pos/src/lib/sync-manager.ts`
 
 ### Phase 2: Core Data Layer
 
 1. **Create API Routes (TanStack Start file-based routing)**
-   - `app/api/auth/login/route.ts` - POST for login
-   - `app/api/orders/route.ts` - GET, POST
-   - `app/api/orders/[id]/route.ts` - PATCH, DELETE
-   - `app/api/bots/route.ts` - GET, POST
-   - `app/api/bots/[id]/route.ts` - PATCH, DELETE
-   - `app/api/sync/route.ts` - POST for client sync
+   - `pos/src/routes/api/auth/login/route.ts` - POST for login
+   - `pos/src/routes/api/orders/route.ts` - GET, POST
+   - `pos/src/routes/api/orders/[id]/route.ts` - PATCH, DELETE
+   - `pos/src/routes/api/bots/route.ts` - GET, POST
+   - `pos/src/routes/api/bots/[id]/route.ts` - PATCH, DELETE
+   - `pos/src/routes/api/sync/route.ts` - POST for client sync
 
 2. **Implement TanStack DB Queries**
-   - Create query functions in `app/db/queries.ts` using TanStack DB
+   - Create query functions in `pos/src/db/queries.ts` using TanStack DB
    - Order queue query: VIP first, then by order_number
    - Bot status queries with joins
    - Type-safe mutations for CRUD operations
 
 3. **Implement TanStack Query Hooks**
-   - `app/hooks/api/orders.ts` - useOrders, useCreateOrder, useUpdateOrder
-   - `app/hooks/api/bots.ts` - useBots, useCreateBot, useRemoveBot
-   - `app/hooks/api/auth.ts` - useLogin, useLogout
+   - `pos/src/hooks/api/orders.ts` - useOrders, useCreateOrder, useUpdateOrder
+   - `pos/src/hooks/api/bots.ts` - useBots, useCreateBot, useRemoveBot
+   - `pos/src/hooks/api/auth.ts` - useLogin, useLogout
    - Configure for offline support with `persistQueryClient`
 
 4. **Implement Client-Side Bot Processing Logic**
-   - Create `app/lib/bot-processor.ts` that integrates with TanStack Store
-   - Bot timer state managed in TanStack Store (`app/store/bot.ts`):
+   - Create `pos/src/lib/bot-processor.ts` that integrates with TanStack Store
+   - Implement `BotProcessorService.getInstance()` to enforce a single processor per tab
+   - Enforce **single-writer** behavior for bot/order state across tabs:
+     - Only the elected leader tab mutates bot timers and order status
+     - Non-leader tabs subscribe/read via TanStack Query or BroadcastChannel updates
+     - Use a lightweight leader election + heartbeat (e.g., `BroadcastChannel` + `localStorage` lease) to avoid split-brain
+   - Bot timer state managed in TanStack Store (`pos/src/store/bot.ts`):
      - `botTimers: Map<botId, remainingMs>` - track remaining time per bot
      - `botStatus: Map<botId, 'IDLE' | 'PROCESSING'>` - track bot status
      - `currentOrder: Map<botId, orderId>` - track assigned orders
@@ -423,7 +412,7 @@ INSERT INTO users (id, username, password_hash, role) VALUES
    - Validation schemas:
 
      ```typescript
-     // app/lib/schemas/auth.ts
+     // pos/src/lib/schemas/auth.ts
      import { z } from 'zod';
 
      export const loginSchema = z.object({
@@ -561,71 +550,71 @@ INSERT INTO users (id, username, password_hash, role) VALUES
 
 ```
 feedme-order-controller/
-├── app/
-│   ├── routes/
-│   │   ├── index.tsx              # Main order management UI (requires auth)
-│   │   ├── login.tsx              # Login page
-│   │   └── api/
-│   │       ├── auth/
-│   │       │   └── login/
-│   │       │       └── route.ts   # POST (login)
-│   │       ├── orders/
-│   │       │   ├── route.ts       # GET (list), POST (create)
-│   │       │   └── [id]/route.ts  # PATCH, DELETE
-│   │       ├── bots/
-│   │       │   ├── route.ts       # GET (list), POST (create)
-│   │       │   └── [id]/route.ts  # PATCH, DELETE
-│   │       └── sync/
-│   │           └── route.ts       # POST (sync operations)
-│   ├── db/
-│   │   ├── schema.ts              # Drizzle schema (users, orders, bots)
-│   │   ├── index.ts               # Turso connection
-│   │   ├── tanstack-db.ts         # TanStack DB initialization & query builders
-│   │   ├── offline.ts             # IndexedDB (Dexie) schema
-│   │   ├── queries.ts             # Query functions (using TanStack DB)
-│   │   └── seed.ts                # Seed script for sample users
-│   ├── store/
-│   │   ├── auth.ts                # TanStack Store for auth state (persisted)
-│   │   ├── order.ts               # TanStack Store for order state
-│   │   └── bot.ts                 # TanStack Store for bot state + timers (persisted)
-│   ├── hooks/
-│   │   └── api/
-│   │       ├── orders.ts          # TanStack Query hooks for orders
-│   │       ├── bots.ts            # TanStack Query hooks for bots
-│   │       └── auth.ts            # TanStack Query hooks for auth
-│   ├── lib/
-│   │   ├── sync-manager.ts        # Offline sync logic
-│   │   ├── bot-processor.ts       # Client-side bot order processing
-│   │   ├── uuid7.ts               # UUID7 utility function
-│   │   └── schemas/
-│   │       ├── auth.ts            # Zod validation schemas for auth
-│   │       ├── order.ts           # Zod validation schemas for orders
-│   │       └── bot.ts             # Zod validation schemas for bots
-│   ├── components/
-│   │   ├── ui/                    # shadcn/ui components
-│   │   │   ├── button.tsx
-│   │   │   ├── card.tsx
-│   │   │   ├── input.tsx
-│   │   │   ├── label.tsx
-│   │   │   ├── badge.tsx
-│   │   │   └── progress.tsx
-│   │   ├── OrderCard.tsx          # Order display component
-│   │   ├── BotDisplay.tsx         # Bot status component
-│   │   ├── ControlPanel.tsx       # Buttons
-│   │   ├── OfflineIndicator.tsx   # Connection status
-│   │   └── LoginForm.tsx          # Login form (TanStack Form)
-│   └── styles/
-│       └── globals.css
-├── public/
-│   ├── manifest.json              # PWA manifest
-│   └── icons/                     # PWA icons
-├── drizzle.config.ts
-├── drizzle.seed.ts                # Seed script entry point
-├── vite.config.ts                 # With PWA plugin
-├── tailwind.config.ts
+├── pos/
+│   ├── src/
+│   │   ├── routes/
+│   │   │   ├── index.tsx              # Main order management UI (requires auth)
+│   │   │   ├── login.tsx              # Login page
+│   │   │   └── api/
+│   │   │       ├── auth/
+│   │   │       │   └── login/
+│   │   │       │       └── route.ts   # POST (login)
+│   │   │       ├── orders/
+│   │   │       │   ├── route.ts       # GET (list), POST (create)
+│   │   │       │   └── [id]/route.ts  # PATCH, DELETE
+│   │   │       ├── bots/
+│   │   │       │   ├── route.ts       # GET (list), POST (create)
+│   │   │       │   └── [id]/route.ts  # PATCH, DELETE
+│   │   │       └── sync/
+│   │   │           └── route.ts       # POST (sync operations)
+│   │   ├── db/
+│   │   │   ├── schema.ts              # Drizzle schema (users, orders, bots)
+│   │   │   ├── index.ts               # Turso connection
+│   │   │   ├── tanstack-db.ts         # TanStack DB initialization & query builders
+│   │   │   ├── offline.ts             # IndexedDB (Dexie) schema
+│   │   │   ├── queries.ts             # Query functions (using TanStack DB)
+│   │   │   └── seed.ts                # Seed script for sample users
+│   │   ├── store/
+│   │   │   ├── auth.ts                # TanStack Store for auth state (persisted)
+│   │   │   ├── order.ts               # TanStack Store for order state
+│   │   │   └── bot.ts                 # TanStack Store for bot state + timers (persisted)
+│   │   ├── hooks/
+│   │   │   └── api/
+│   │   │       ├── orders.ts          # TanStack Query hooks for orders
+│   │   │       ├── bots.ts            # TanStack Query hooks for bots
+│   │   │       └── auth.ts            # TanStack Query hooks for auth
+│   │   ├── lib/
+│   │   │   ├── sync-manager.ts        # Offline sync logic
+│   │   │   ├── bot-processor.ts       # Client-side bot order processing
+│   │   │   ├── uuid7.ts               # UUID7 utility function
+│   │   │   └── schemas/
+│   │   │       ├── auth.ts            # Zod validation schemas for auth
+│   │   │       ├── order.ts           # Zod validation schemas for orders
+│   │   │       └── bot.ts             # Zod validation schemas for bots
+│   │   ├── components/
+│   │   │   ├── ui/                    # shadcn/ui components
+│   │   │   │   ├── button.tsx
+│   │   │   │   ├── card.tsx
+│   │   │   │   ├── input.tsx
+│   │   │   │   ├── label.tsx
+│   │   │   │   ├── badge.tsx
+│   │   │   │   └── progress.tsx
+│   │   │   ├── OrderCard.tsx          # Order display component
+│   │   │   ├── BotDisplay.tsx         # Bot status component
+│   │   │   ├── ControlPanel.tsx       # Buttons
+│   │   │   ├── OfflineIndicator.tsx   # Connection status
+│   │   │   └── LoginForm.tsx          # Login form (TanStack Form)
+│   │   └── styles.css
+│   ├── public/
+│   │   ├── manifest.json              # PWA manifest
+│   │   └── icons/                     # PWA icons (optional)
+│   ├── drizzle.config.ts
+│   ├── vite.config.ts                 # With PWA plugin
+│   ├── tsconfig.json
+│   └── package.json
 ├── package.json
 ├── .env                           # Turso credentials
-└── tsconfig.json
+└── pnpm-workspace.yaml
 ```
 
 ## Verification Steps
@@ -666,9 +655,9 @@ feedme-order-controller/
 
 ## Key Implementation Notes
 
-1. **Client-Side Bot Processing**: Bots are managed by the browser tab that created them. If the tab closes, the bot stops. This is a simplification for the demo.
+1. **Client-Side Bot Processing (Single-Writer)**: A single leader tab owns bot timers and order state mutations. Leadership is maintained via a simple lease/heartbeat; if the leader exits, another tab can take over. Non-leader tabs remain read-only observers to avoid double-processing.
 
-2. **Bot Timer State Management**: Bot timers are managed through TanStack Store (`app/store/bot.ts`) with:
+2. **Bot Timer State Management**: Bot timers are managed through TanStack Store (`pos/src/store/bot.ts`) with:
    - `botTimers: Map<botId, remainingMs>` for tracking 10-second countdown
    - `botStatus: Map<botId, 'IDLE' | 'PROCESSING'>` for current state
    - `currentOrder: Map<botId, orderId>` for assigned order
@@ -677,6 +666,7 @@ feedme-order-controller/
    - **Cleanup on unmount**: Use React `useEffect` cleanup to clear intervals/animation frames when navigating away
    - Store provides `startBotTimer(botId)` and `cleanupBotTimers()` actions for lifecycle management
    - Timer state saved allows resumption if user returns to the page (e.g., via back navigation)
+   - Bot processing is orchestrated by a `BotProcessorService` singleton to prevent duplicate timers within a tab
 
 3. **TanStack Store vs Query**:
    - **Store**: For client-side shared state (auth, UI state, bot timers)

@@ -337,7 +337,7 @@ bots (id, status, current_order_id, deleted_at)
 - **Use structured logging** for better debugging and monitoring
 - **Never expose sensitive error details** to clients
 - **Implement proper HTTP status codes** for API responses
-- **No fallback mechanisms** - Never add fallback logic or retry mechanisms unless they already exist in the codebase
+- **No fallback mechanisms (with offline-sync exception)** - Avoid fallback logic or retries unless they already exist in the codebase, except for the frontend offline-sync flow where background sync and exponential backoff are allowed and expected
 
 ### Environment & Configuration
 
