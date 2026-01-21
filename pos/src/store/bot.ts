@@ -25,8 +25,12 @@ function loadBotStoreState(): BotStoreState {
     const saved = localStorage.getItem('bot-store-state')
     if (saved) {
       const parsed = JSON.parse(saved)
+      // Handle both object (from localStorage) and empty cases
+      const botsData = parsed.bots || {}
       return {
-        bots: new Map(Object.entries(parsed.bots || {})),
+        bots: typeof botsData === 'object' && !(botsData instanceof Map)
+          ? new Map(Object.entries(botsData))
+          : new Map(),
         isLeader: parsed.isLeader || false,
       }
     }
@@ -42,10 +46,17 @@ function saveBotStoreState(state: BotStoreState) {
   if (typeof window === 'undefined') return
 
   try {
+    // Convert Map to plain object for JSON serialization
+    const botsObj: Record<string, BotTimerState> = {}
+    if (state.bots instanceof Map) {
+      state.bots.forEach((value, key) => {
+        botsObj[key] = value
+      })
+    }
     localStorage.setItem(
       'bot-store-state',
       JSON.stringify({
-        bots: Object.fromEntries(state.bots),
+        bots: botsObj,
         isLeader: state.isLeader,
       }),
     )
@@ -75,7 +86,9 @@ export const botActions = {
     updateTimestamp = true,
   ) => {
     botStore.setState((prev) => {
-      const bots = new Map(prev.bots)
+      // Ensure prev.bots is always a Map
+      const prevBots = prev.bots instanceof Map ? prev.bots : new Map()
+      const bots = new Map(prevBots)
       const existing = bots.get(botId) || {
         remainingMs: 10000, // 10 seconds
         status: 'IDLE' as const,
@@ -104,7 +117,8 @@ export const botActions = {
   // Tick bot timer (decrement remaining time)
   tickBotTimer: (botId: string, deltaMs: number) => {
     botStore.setState((prev) => {
-      const bots = new Map(prev.bots)
+      const prevBots = prev.bots instanceof Map ? prev.bots : new Map()
+      const bots = new Map(prevBots)
       const existing = bots.get(botId)
       if (existing && existing.status === 'PROCESSING') {
         const newRemainingMs = Math.max(0, existing.remainingMs - deltaMs)
@@ -131,7 +145,8 @@ export const botActions = {
   // Remove bot from store
   removeBot: (botId: string) => {
     botStore.setState((prev) => {
-      const bots = new Map(prev.bots)
+      const prevBots = prev.bots instanceof Map ? prev.bots : new Map()
+      const bots = new Map(prevBots)
       bots.delete(botId)
       return { ...prev, bots }
     })
@@ -156,10 +171,18 @@ export const botActions = {
 
 // React hook for bot store
 export function useBotStore() {
-  const [state, setState] = useState<BotStoreState>(botStore.state)
+  const [state, setState] = useState<BotStoreState>(() => ({
+    bots: botStore.state.bots instanceof Map ? botStore.state.bots : new Map(),
+    isLeader: botStore.state.isLeader ?? false,
+  }))
 
   useEffect(() => {
-    const unsubscribe = botStore.subscribe((newState) => setState(newState))
+    const unsubscribe = botStore.subscribe((newState) => {
+      setState({
+        bots: newState.bots instanceof Map ? newState.bots : new Map(),
+        isLeader: newState.isLeader ?? false,
+      })
+    })
     return unsubscribe
   }, [])
 
