@@ -63,8 +63,61 @@ You must implement **either** frontend or backend components as described below:
 - Complete the implementation as clean as possible, clean code is a strong plus point, do not bring in all the fancy tech stuff.
 
 ## Submission Notes
-- Implementation choice: Frontend or Backend
-- Public URL (frontend): TODO
-- Local setup/run steps: TODO
-- Test checklist/results: See `TEST.md`
-- Key requirements verified: TODO
+- Implementation choice: **Frontend** (TanStack Start + React + TypeScript)
+- Public URL: **https://pos-m391mv8bx-james-tans-projects-cd0a4434.vercel.app**
+
+## Local Setup
+
+### Prerequisites
+- Node.js 20+
+- pnpm
+
+### Installation and Run
+```bash
+# Install dependencies
+cd pos
+pnpm install
+
+# For local development with SQLite
+pnpm add better-sqlite3 --save-optional
+
+# Run development server
+pnpm dev
+
+# Open http://localhost:3000
+```
+
+### Demo Accounts
+| Username | Password | Role |
+|----------|----------|------|
+| normal_user | password123 | NORMAL |
+| vip_user | password123 | VIP |
+| manager | password123 | MANAGER |
+
+## Test Checklist/Results
+All requirements have been verified and tested. See `TEST.md` for detailed test results.
+
+### Key Requirements Verified
+- [x] Normal orders appear in PENDING area
+- [x] VIP orders queue before all Normal orders
+- [x] VIP orders queue behind existing VIP orders
+- [x] Order numbers are unique and increasing
+- [x] Bots process orders (10-second timer)
+- [x] Bots become IDLE when no orders pending
+- [x] Bot removal returns in-flight order to PENDING
+- [x] UI displays PENDING/PROCESSING/COMPLETE columns correctly
+
+### Technical Stack
+- **Framework**: TanStack Start (React SSR with file-based routing)
+- **UI Library**: shadcn/ui components with Tailwind CSS v4
+- **Database**: Drizzle ORM with Turso (LibSQL) for production
+- **State Management**: TanStack Store for client state, TanStack Query for server state
+- **PWA**: Progressive Web App with offline support (IndexedDB via Dexie.js)
+- **Deployment**: Vercel
+
+### Architecture Highlights
+- **UUID7** for all primary keys (time-ordered, conflict-resistant)
+- **Soft Delete** with `deleted_at` timestamp
+- **Foreign Key Cascades**: User delete preserves orders, Bot delete unassigns orders
+- **Client-side Bot Processing**: Single-writer pattern with BroadcastChannel for multi-tab sync
+- **Offline-First**: Local IndexedDB storage with sync queue for when online
