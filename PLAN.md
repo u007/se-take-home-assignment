@@ -19,6 +19,15 @@
 7. **User Interface** - Must demonstrate all requirements with interactive UI
 8. **Public Deployment** - Must be deployed to publicly accessible URL
 
+### Submission Requirements Coverage (Frontend Track)
+
+1. **Working prototype** - Implement a functioning UI that satisfies all requirements
+2. **Public URL** - Deploy to a publicly accessible URL (Vercel)
+3. **Documentation** - Provide setup/run notes and the deployed URL in `README.md`
+4. **Source code** - Ensure the repository contains the full implementation (not just the plan)
+5. **Verification** - Record manual test steps and outcomes in `README.md`
+6. **Interview readiness** - Bring the working prototype and codebase to the interview
+
 ### User-Specific Requirements
 
 1. **Framework**: TanStack Start (full-stack React framework with SSR)
@@ -366,6 +375,15 @@ INSERT INTO users (id, username, password_hash, role) VALUES
    - Configure environment variables
    - Test deployed application
    - Verify PWA installability
+
+3. **Documentation & Submission Artifacts**
+   - Update `README.md` with:
+     - Public deployment URL
+     - Local dev setup and run steps
+     - Summary of implemented requirements
+     - Manual test checklist results
+   - Add screenshots or short GIFs if helpful (optional)
+   - Ensure repository contains all source code and config
 
 ## File Structure
 
