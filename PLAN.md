@@ -28,6 +28,22 @@
 5. **Verification** - Record manual test steps and outcomes in `README.md`
 6. **Interview readiness** - Bring the working prototype and codebase to the interview
 
+### Original Assignment Requirements (Backend Track)
+
+1. **CLI Application** - Implement in Go or Node.js
+2. **Scripts** - Provide `scripts/test.sh`, `scripts/build.sh`, `scripts/run.sh`
+3. **Result Output** - CLI writes output to `scripts/result.txt`
+4. **Timestamps** - Output includes `HH:MM:SS` timestamps for order completion
+5. **GitHub Flow** - Submit PR and ensure checks pass
+
+### Submission Requirements Coverage (Backend Track)
+
+1. **Working CLI prototype** - Implement required order controller behavior
+2. **Scripts & output** - `scripts/*.sh` and `scripts/result.txt` are functional
+3. **Documentation** - Update `README.md` with run steps and output notes
+4. **Verification** - Manual test checklist in `TEST.md` updated with results
+5. **PR readiness** - Repo is ready for PR with passing checks
+
 ### User-Specific Requirements
 
 1. **Framework**: TanStack Start (full-stack React framework with SSR)
@@ -384,6 +400,68 @@ INSERT INTO users (id, username, password_hash, role) VALUES
      - Manual test checklist results
    - Add screenshots or short GIFs if helpful (optional)
    - Ensure repository contains all source code and config
+
+---
+
+## Backend CLI Implementation Plan (Node.js)
+
+### Phase B1: CLI Skeleton & Scripts
+
+1. **Project setup**
+   - Initialize Node.js project (TypeScript optional)
+   - Add `scripts/test.sh`, `scripts/build.sh`, `scripts/run.sh` (already present but will be wired)
+2. **CLI entry**
+   - Create `src/index.js` (or `src/index.ts`)
+   - Parse CLI args if needed (defaults are fine)
+3. **Output target**
+   - Write all CLI output to `scripts/result.txt`
+   - Use a helper logger that prefixes timestamps in `HH:MM:SS`
+
+### Phase B2: Core Order Controller Logic
+
+1. **Data structures**
+   - In-memory queues for VIP and Normal
+   - Bots array with status, current order, and timer handle
+2. **Order model**
+   - Fields: orderNumber, type (VIP/NORMAL), status (PENDING/PROCESSING/COMPLETE)
+   - Order numbers increment globally
+3. **Queue rules**
+   - VIP orders go ahead of all normal orders, behind existing VIP
+   - Normal orders append to normal queue
+4. **Bot behavior**
+   - + Bot: create and immediately attempt to process next pending
+   - - Bot: remove newest bot, return its current order to PENDING
+   - Each bot processes one order at a time, 10 seconds per order
+
+### Phase B3: Simulation Runner
+
+1. **Scenario setup**
+   - Create a deterministic scenario: multiple normal/VIP orders and bot changes
+   - Ensure it covers requirements (VIP priority, bot removal, idle state)
+2. **Execution**
+   - Tick scheduler manages bot timers
+   - Write state transitions to `scripts/result.txt` with timestamps
+3. **Completion**
+   - All orders reach COMPLETE
+   - Bots end IDLE
+
+### Phase B4: Scripts & Tests
+
+1. **scripts/build.sh**
+   - If TypeScript: compile to `dist/`
+   - If plain JS: no-op or lint (keep it simple)
+2. **scripts/run.sh**
+   - Run CLI and produce `scripts/result.txt`
+3. **scripts/test.sh**
+   - Minimal unit tests for queue logic and bot removal behavior
+
+### Phase B5: Documentation
+
+1. **README updates**
+   - CLI run instructions
+   - Describe `scripts/result.txt` content and timestamp format
+2. **TEST.md**
+   - Mark backend checks as completed when verified
 
 ## File Structure
 
