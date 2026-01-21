@@ -49,7 +49,10 @@ export const Route = createFileRoute('/api/bots/$id')({
 
           // If bot was processing an order and is now being updated to idle/removed,
           // return the order to PENDING
-          if (bot.currentOrderId && (body.status === 'IDLE' || body.currentOrderId === null)) {
+          if (
+            bot.currentOrderId &&
+            (body.status === 'IDLE' || body.currentOrderId === null)
+          ) {
             await db
               .update(orders)
               .set({
@@ -57,7 +60,12 @@ export const Route = createFileRoute('/api/bots/$id')({
                 botId: null,
                 updatedAt: new Date(),
               })
-              .where(eq(orders.id, bot.currentOrderId))
+              .where(
+                and(
+                  eq(orders.id, bot.currentOrderId),
+                  eq(orders.status, 'PROCESSING'),
+                ),
+              )
           }
 
           // Return updated bot
@@ -102,7 +110,12 @@ export const Route = createFileRoute('/api/bots/$id')({
                 botId: null,
                 updatedAt: new Date(),
               })
-              .where(eq(orders.id, bot.currentOrderId))
+              .where(
+                and(
+                  eq(orders.id, bot.currentOrderId),
+                  eq(orders.status, 'PROCESSING'),
+                ),
+              )
           }
 
           // Soft delete by setting deletedAt

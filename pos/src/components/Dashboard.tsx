@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { useAuthStore, type UserRole } from '@/store/auth'
+import { useAuthStore } from '@/store/auth'
 import { useBotStore, useBotTimerCleanup } from '@/store/bot'
 import { botProcessor } from '@/lib/bot-processor'
 import { OrderCard } from './OrderCard'
 import { BotDisplay } from './BotDisplay'
 import { ControlPanel } from './ControlPanel'
 import { OfflineIndicator } from './OfflineIndicator'
-import { LogOut, User as UserIcon } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { Button } from './ui/button'
 import { useQuery } from '@tanstack/react-query'
-import type { Order, Bot } from '@/db/schema'
 
 interface DashboardOrder {
   id: string
@@ -137,7 +136,7 @@ export function Dashboard() {
     const activeBots = bots.filter((b: DashboardBot) => b.status !== 'DELETED')
     if (activeBots.length === 0) return
 
-    const newestBot = activeBots[activeBots.length - 1]
+    const newestBot = activeBots[0]
 
     setIsCreating(true)
     try {
@@ -170,18 +169,43 @@ export function Dashboard() {
       const bot = idleBots[0]
       const order = unassignedOrders[0] // VIP orders first due to SQL ordering
 
-      // Start processing
-      botProcessor.startOrderProcessing(bot.id, order.id)
+      const assignOrder = async () => {
+        try {
+          const [orderResponse, botResponse] = await Promise.all([
+            fetch(`/api/orders/${order.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                status: 'PROCESSING',
+                botId: bot.id,
+              }),
+            }),
+            fetch(`/api/bots/${bot.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                status: 'PROCESSING',
+                currentOrderId: order.id,
+              }),
+            }),
+          ])
 
-      // Update order status
-      fetch(`/api/orders/${order.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'PROCESSING',
-          botId: bot.id,
-        }),
-      })
+          if (!orderResponse.ok) {
+            throw new Error('Failed to update order status')
+          }
+
+          if (!botResponse.ok) {
+            throw new Error('Failed to update bot status')
+          }
+
+          // Start processing after persistence succeeds
+          botProcessor.startOrderProcessing(bot.id, order.id)
+        } catch (error) {
+          console.error('Error assigning order to bot:', error)
+        }
+      }
+
+      void assignOrder()
     }
   }, [bots, pendingOrders, botState.isLeader])
 
@@ -190,12 +214,33 @@ export function Dashboard() {
     const handleBotComplete = async (event: CustomEvent) => {
       const { botId, orderId } = event.detail
 
-      // Mark order as complete
-      await fetch(`/api/orders/${orderId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'COMPLETE' }),
-      })
+      try {
+        const [orderResponse, botResponse] = await Promise.all([
+          fetch(`/api/orders/${orderId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'COMPLETE' }),
+          }),
+          fetch(`/api/bots/${botId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              status: 'IDLE',
+              currentOrderId: null,
+            }),
+          }),
+        ])
+
+        if (!orderResponse.ok) {
+          throw new Error('Failed to complete order')
+        }
+
+        if (!botResponse.ok) {
+          throw new Error('Failed to update bot status')
+        }
+      } catch (error) {
+        console.error('Error completing order:', error)
+      }
 
       await refetchOrders()
       await refetchBots()

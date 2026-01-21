@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getDb } from '@/db'
 import { orders } from '@/db/schema'
-import { eq, and, isNull, desc } from 'drizzle-orm'
+import { isNull, desc, sql } from 'drizzle-orm'
 import { uuidv7 } from '@/lib/uuid7'
 
 interface CreateOrderRequest {
@@ -21,7 +21,18 @@ export const Route = createFileRoute('/api/orders')({
             .select()
             .from(orders)
             .where(isNull(orders.deletedAt))
-            .orderBy(desc(orders.createdAt))
+            .orderBy(
+              sql<number>`
+                case
+                  when ${orders.status} = 'PENDING' and ${orders.type} = 'VIP' then 0
+                  when ${orders.status} = 'PENDING' and ${orders.type} = 'NORMAL' then 1
+                  when ${orders.status} = 'PROCESSING' then 2
+                  else 3
+                end
+              `,
+              sql<number>`case when ${orders.status} = 'PENDING' then ${orders.orderNumber} end`,
+              desc(orders.createdAt),
+            )
 
           return Response.json({ orders: allOrders })
         } catch (error) {
