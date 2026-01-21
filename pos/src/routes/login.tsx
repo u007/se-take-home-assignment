@@ -1,27 +1,27 @@
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { useAuthStore } from '@/store/auth'
-import { Dashboard } from '@/components/Dashboard'
+import { LoginForm } from '@/components/LoginForm'
 
-export const Route = createFileRoute('/')({
-  component: IndexComponent,
+export const Route = createFileRoute('/login')({
+  component: LoginComponent,
 })
 
-function IndexComponent() {
+function LoginComponent() {
   const router = useRouter()
   const { state: authState } = useAuthStore()
 
   useEffect(() => {
-    // Redirect to login if not authenticated
-    if (!authState.isAuthenticated) {
-      router.navigate({ to: '/login' })
+    // Redirect to dashboard if already authenticated
+    if (authState.isAuthenticated) {
+      router.navigate({ to: '/' })
     }
   }, [authState.isAuthenticated, router])
 
   // Show nothing while redirecting
-  if (!authState.isAuthenticated) {
+  if (authState.isAuthenticated) {
     return null
   }
 
-  return <Dashboard />
+  return <LoginForm />
 }

@@ -1,5 +1,5 @@
-import { createStore } from '@tanstack/store'
-import { useEffect } from 'react'
+import { Store } from '@tanstack/store'
+import { useEffect, useState } from 'react'
 
 // Bot timer state type
 export interface BotTimerState {
@@ -55,7 +55,7 @@ function saveBotStoreState(state: BotStoreState) {
 }
 
 // Create bot store
-export const botStore = createStore<BotStoreState>({
+export const botStore = new Store<BotStoreState>({
   ...loadBotStoreState(),
 })
 
@@ -156,7 +156,12 @@ export const botActions = {
 
 // React hook for bot store
 export function useBotStore() {
-  const [state, setState] = botStore.useStore()
+  const [state, setState] = useState<BotStoreState>(botStore.state)
+
+  useEffect(() => {
+    const unsubscribe = botStore.subscribe((newState) => setState(newState))
+    return unsubscribe
+  }, [])
 
   return {
     state,

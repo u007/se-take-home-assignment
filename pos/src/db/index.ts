@@ -6,10 +6,10 @@ import { drizzle as drizzleLocal } from 'drizzle-orm/better-sqlite3'
 import * as schema from './schema.ts'
 
 // Database connection singleton
-let db: ReturnType<typeof drizzle> | ReturnType<typeof drizzleLocal> | null = null
+let _dbInstance: ReturnType<typeof drizzle> | ReturnType<typeof drizzleLocal> | null = null
 
 export function getDb() {
-  if (db) return db
+  if (_dbInstance) return _dbInstance
 
   // Use Turso in production (when DATABASE_URL is set)
   // Use local SQLite in development
@@ -18,13 +18,13 @@ export function getDb() {
       url: process.env.DATABASE_URL,
       authToken: process.env.DB_PASS,
     })
-    db = drizzle(client, { schema })
+    _dbInstance = drizzle(client, { schema })
   } else {
     const localDb = new Database('./local.db')
-    db = drizzleLocal(localDb, { schema })
+    _dbInstance = drizzleLocal(localDb, { schema })
   }
 
-  return db
+  return _dbInstance
 }
 
 // Export default db instance for convenience

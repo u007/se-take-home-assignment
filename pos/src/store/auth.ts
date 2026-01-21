@@ -1,4 +1,5 @@
-import { createStore } from '@tanstack/store'
+import { Store } from '@tanstack/store'
+import { useEffect, useState } from 'react'
 
 // User role types
 export type UserRole = 'NORMAL' | 'VIP' | 'MANAGER' | 'BOT'
@@ -35,7 +36,7 @@ function loadAuthStoreState(): AuthStoreState {
 }
 
 // Create auth store
-export const authStore = createStore<AuthStoreState>({
+export const authStore = new Store<AuthStoreState>({
   ...loadAuthStoreState(),
 })
 
@@ -79,7 +80,12 @@ export const authActions = {
 
 // React hook for auth store
 export function useAuthStore() {
-  const [state, setState] = authStore.useStore()
+  const [state, setState] = useState<AuthStoreState>(authStore.state)
+
+  useEffect(() => {
+    const unsubscribe = authStore.subscribe((newState) => setState(newState))
+    return unsubscribe
+  }, [])
 
   return {
     state,

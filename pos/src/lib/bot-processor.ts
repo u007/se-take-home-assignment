@@ -1,4 +1,4 @@
-import { botActions, type BotTimerState } from '../store/bot'
+import { botActions, botStore, type BotTimerState } from '../store/bot'
 
 // Bot processor configuration
 const BOT_PROCESSING_TIME_MS = 10000 // 10 seconds
@@ -202,9 +202,6 @@ class BotProcessorService {
     }
   }
 }
-
-// Import botStore for type checking
-import { botStore } from '../store/bot'
 
 // Export singleton instance
 export const botProcessor = BotProcessorService.getInstance()

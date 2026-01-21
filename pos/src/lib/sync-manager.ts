@@ -1,4 +1,5 @@
 import { offlineDb, type SyncOperation } from '../db/offline'
+import { useEffect, useState } from 'react'
 
 // Sync manager state
 interface SyncState {
@@ -268,9 +269,9 @@ export const syncManager = SyncManager.getInstance()
 
 // Export hook for React
 export function useSyncManager() {
-  const [state, setState] = React.useState<SyncState>(syncManager.getState())
+  const [state, setState] = useState<SyncState>(syncManager.getState())
 
-  React.useEffect(() => {
+  useEffect(() => {
     const unsubscribe = syncManager.subscribe(setState)
     return unsubscribe
   }, [])
@@ -280,6 +281,3 @@ export function useSyncManager() {
     triggerSync: () => syncManager.triggerSync(),
   }
 }
-
-// Import React for the hook
-import React from 'react'
