@@ -1,12 +1,10 @@
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
-import Database from 'better-sqlite3'
-import { drizzle as drizzleLocal } from 'drizzle-orm/better-sqlite3'
 
 import * as schema from './schema.ts'
 
 // Database connection singleton
-let _dbInstance: ReturnType<typeof drizzle> | ReturnType<typeof drizzleLocal> | null = null
+let _dbInstance: ReturnType<typeof drizzle> | null = null
 
 export function getDb() {
   if (_dbInstance) return _dbInstance
@@ -20,8 +18,16 @@ export function getDb() {
     })
     _dbInstance = drizzle(client, { schema })
   } else {
-    const localDb = new Database('./local.db')
-    _dbInstance = drizzleLocal(localDb, { schema })
+    // Dynamic import for better-sqlite3 (not available on Vercel)
+    try {
+      const Database = require('better-sqlite3')
+      const { drizzle: drizzleLocal } = require('drizzle-orm/better-sqlite3')
+      const localDb = new Database('./local.db')
+      _dbInstance = drizzleLocal(localDb, { schema })
+    } catch (e) {
+      console.warn('better-sqlite3 not available, DATABASE_URL required for production')
+      throw new Error('Database not available. Please set DATABASE_URL environment variable or install better-sqlite3 for local development.')
+    }
   }
 
   return _dbInstance

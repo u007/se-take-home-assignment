@@ -49,7 +49,6 @@
     "@tanstack/router-plugin": "^1.132.0",
     "@tanstack/store": "^0.8.0",
     "better-auth": "^1.4.12",
-    "better-sqlite3": "^12.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dexie": "^4.2.1",
@@ -90,5 +89,8 @@
     "vite": "^7.1.7",
     "vitest": "^3.0.5",
     "web-vitals": "^5.1.0"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^12.5.0"
   }
 }
