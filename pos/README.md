@@ -1,382 +1,202 @@
-Welcome to your new TanStack app! 
+# FeedMe Order Controller
 
-# Getting Started
+A full-stack order management system built with TanStack Start, featuring VIP priority queuing, bot processing, and offline-first capabilities.
 
-To run this application:
+## Features
+
+- **Order Management**: Create and track NORMAL and VIP orders with a three-column dashboard (PENDING → PROCESSING → COMPLETE)
+- **VIP Priority**: VIP orders are prioritized in the queue
+- **Bot Processing**: Automated bots process orders with 10-second timers
+- **User Roles**: NORMAL, VIP, and MANAGER roles with different permissions
+- **Offline-First**: IndexedDB storage with automatic sync when connection is restored
+- **PWA Ready**: Installable as a progressive web app
+- **Multi-Tab Sync**: Single-writer pattern ensures only one tab processes orders
+
+## Tech Stack
+
+- **Framework**: TanStack Start (React 19, Vite 7)
+- **Database**: Drizzle ORM with SQLite (local) / Turso (production)
+- **State Management**: TanStack Store
+- **Data Fetching**: TanStack Query
+- **Styling**: Tailwind CSS v4 + shadcn/ui
+- **Offline Storage**: Dexie (IndexedDB wrapper)
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- pnpm
+
+### Installation
 
 ```bash
 pnpm install
+```
+
+### Database Setup
+
+For local development, the app uses SQLite. Run the seed script to create the database and demo users:
+
+```bash
+pnpm tsx scripts/seed-db.ts
+```
+
+This creates:
+- 3 demo users: `normal_user`, `vip_user`, `manager` (password: `password123`)
+- 2 initial bots
+
+### Development
+
+```bash
 pnpm dev
 ```
 
-# Building For Production
+Visit `http://localhost:3000`
 
-To build this application for production:
+## Demo Credentials
+
+| Username | Password | Role | Permissions |
+|----------|----------|------|-------------|
+| normal_user | password123 | NORMAL | Create normal orders |
+| vip_user | password123 | VIP | Create normal + VIP orders |
+| manager | password123 | MANAGER | All orders + bot management |
+
+## Architecture
+
+### Database Schema
+
+```sql
+-- Users table with soft delete
+CREATE TABLE users (
+  id TEXT PRIMARY KEY,  -- UUID7
+  username TEXT NOT NULL,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL,  -- 'NORMAL' | 'VIP' | 'MANAGER' | 'BOT'
+  created_at INTEGER,
+  updated_at INTEGER,
+  deleted_at INTEGER  -- Soft delete support
+);
+
+-- Orders table with soft delete and FK cascades
+CREATE TABLE orders (
+  id TEXT PRIMARY KEY,  -- UUID7
+  order_number INTEGER NOT NULL,
+  type TEXT NOT NULL,  -- 'NORMAL' | 'VIP'
+  status TEXT NOT NULL,  -- 'PENDING' | 'PROCESSING' | 'COMPLETE'
+  user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  bot_id TEXT REFERENCES bots(id) ON DELETE SET NULL,
+  created_at INTEGER,
+  completed_at INTEGER,
+  updated_at INTEGER,
+  deleted_at INTEGER
+);
+
+-- Bots table with soft delete
+CREATE TABLE bots (
+  id TEXT PRIMARY KEY,  -- UUID7
+  status TEXT NOT NULL,  -- 'IDLE' | 'PROCESSING'
+  current_order_id TEXT REFERENCES orders(id) ON DELETE SET NULL,
+  created_at INTEGER,
+  updated_at INTEGER,
+  deleted_at INTEGER
+);
+```
+
+### Project Structure
+
+```
+src/
+├── components/          # React components
+│   ├── Dashboard.tsx    # Main dashboard with 3-column layout
+│   ├── OrderCard.tsx    # Order display with VIP styling
+│   ├── BotDisplay.tsx   # Bot status with progress bar
+│   ├── ControlPanel.tsx # Control buttons
+│   ├── LoginForm.tsx    # Login page
+│   └── OfflineIndicator.tsx  # Sync status
+├── db/
+│   ├── schema.ts        # Drizzle schema definitions
+│   ├── index.ts         # Database connection (SQLite/Turso)
+│   └── offline.ts       # IndexedDB wrapper (Dexie)
+├── lib/
+│   ├── bot-processor.ts # Bot processing singleton
+│   ├── sync-manager.ts  # Offline-to-online sync
+│   ├── uuid7.ts         # UUID7 generator
+│   └── schemas/         # Zod validation schemas
+├── routes/
+│   ├── __root.tsx       # Root layout
+│   ├── index.tsx        # Dashboard route
+│   ├── login.tsx        # Login route
+│   └── api/             # API routes
+├── store/
+│   ├── auth.ts          # Authentication state
+│   └── bot.ts           # Bot timer state
+└── styles.css           # Tailwind + custom styles
+```
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/login` | User authentication |
+| GET | `/api/orders` | List all orders |
+| POST | `/api/orders` | Create new order |
+| PATCH | `/api/orders/:id` | Update order status |
+| DELETE | `/api/orders/:id` | Soft delete order |
+| GET | `/api/bots` | List all bots |
+| POST | `/api/bots` | Create new bot |
+| PATCH | `/api/bots/:id` | Update bot status |
+| DELETE | `/api/bots/:id` | Soft delete bot |
+| POST | `/api/sync` | Client-server sync |
+
+## Testing
+
+Run the automated test suite:
+
+```bash
+python3 /tmp/final_test.py
+```
+
+### Manual Test Checklist
+
+- [x] Login with demo credentials
+- [x] Create NORMAL orders
+- [x] Create VIP orders (gold badge displayed)
+- [x] View three-column dashboard (PENDING | PROCESSING | COMPLETE)
+- [x] Add/remove bots (MANAGER only)
+- [x] Auto-assign orders to idle bots
+- [x] 10-second processing timer
+- [x] Orders move to COMPLETE after timer
+- [x] Offline indicator shows when disconnected
+- [x] Sync status displays pending operations
+
+## Known Issues
+
+1. **URL Navigation**: URL doesn't update on client-side navigation (TanStack Router issue)
+2. **Turso Auth**: Turso credentials need verification for production deployment
+3. **Concurrent Bot Processing**: Multiple bots can process orders simultaneously, but the auto-assign logic needs refinement for optimal distribution
+
+## Deployment
+
+### Build for Production
 
 ```bash
 pnpm build
 ```
 
-## Testing
+### Deploy to Vercel
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
-
-```bash
-pnpm test
-```
-
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-
-## Linting & Formatting
-
-
-This project uses [eslint](https://eslint.org/) and [prettier](https://prettier.io/) for linting and formatting. Eslint is configured using [tanstack/eslint-config](https://tanstack.com/config/latest/docs/eslint). The following scripts are available:
-
-```bash
-pnpm lint
-pnpm format
-pnpm check
-```
-
-
-## Setting up Better Auth
-
-1. Generate and set the `BETTER_AUTH_SECRET` environment variable in your `.env.local`:
-
-   ```bash
-   npx @better-auth/cli secret
+1. Set environment variables:
+   ```
+   DATABASE_URL=libsql://your-turso-url
+   DB_PASS=your-turso-auth-token
    ```
 
-2. Visit the [Better Auth documentation](https://www.better-auth.com) to unlock the full potential of authentication in your app.
+2. Deploy:
+   ```bash
+   vercel deploy
+   ```
 
-### Adding a Database (Optional)
+## License
 
-Better Auth can work in stateless mode, but to persist user data, add a database:
-
-```typescript
-// src/lib/auth.ts
-import { betterAuth } from "better-auth";
-import { Pool } from "pg";
-
-export const auth = betterAuth({
-  database: new Pool({
-    connectionString: process.env.DATABASE_URL,
-  }),
-  // ... rest of config
-});
-```
-
-Then run migrations:
-
-```bash
-npx @better-auth/cli migrate
-```
-
-
-## Shadcn
-
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
-
-```bash
-pnpm dlx shadcn@latest add button
-```
-
-
-# TanStack Chat Application
-
-Am example chat application built with TanStack Start, TanStack Store, and Claude AI.
-
-## .env Updates
-
-```env
-ANTHROPIC_API_KEY=your_anthropic_api_key
-```
-
-## ✨ Features
-
-### AI Capabilities
-- 🤖 Powered by Claude 3.5 Sonnet 
-- 📝 Rich markdown formatting with syntax highlighting
-- 🎯 Customizable system prompts for tailored AI behavior
-- 🔄 Real-time message updates and streaming responses (coming soon)
-
-### User Experience
-- 🎨 Modern UI with Tailwind CSS and Lucide icons
-- 🔍 Conversation management and history
-- 🔐 Secure API key management
-- 📋 Markdown rendering with code highlighting
-
-### Technical Features
-- 📦 Centralized state management with TanStack Store
-- 🔌 Extensible architecture for multiple AI providers
-- 🛠️ TypeScript for type safety
-
-## Architecture
-
-### Tech Stack
-- **Frontend Framework**: TanStack Start
-- **Routing**: TanStack Router
-- **State Management**: TanStack Store
-- **Styling**: Tailwind CSS
-- **AI Integration**: Anthropic's Claude API
-
-
-## Routing
-This project uses [TanStack Router](https://tanstack.com/router). The initial setup is a file based router. Which means that the routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add another a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you use the `<Outlet />` component.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { Outlet, createRootRoute } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-
-import { Link } from "@tanstack/react-router";
-
-export const Route = createRootRoute({
-  component: () => (
-    <>
-      <header>
-        <nav>
-          <Link to="/">Home</Link>
-          <Link to="/about">About</Link>
-        </nav>
-      </header>
-      <Outlet />
-      <TanStackRouterDevtools />
-    </>
-  ),
-})
-```
-
-The `<TanStackRouterDevtools />` component is not required so you can remove it if you don't want it in your layout.
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-const peopleRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/people",
-  loader: async () => {
-    const response = await fetch("https://swapi.dev/api/people");
-    return response.json() as Promise<{
-      results: {
-        name: string;
-      }[];
-    }>;
-  },
-  component: () => {
-    const data = peopleRoute.useLoaderData();
-    return (
-      <ul>
-        {data.results.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    );
-  },
-});
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-### React-Query
-
-React-Query is an excellent addition or alternative to route loading and integrating it into you application is a breeze.
-
-First add your dependencies:
-
-```bash
-pnpm add @tanstack/react-query @tanstack/react-query-devtools
-```
-
-Next we'll need to create a query client and provider. We recommend putting those in `main.tsx`.
-
-```tsx
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-// ...
-
-const queryClient = new QueryClient();
-
-// ...
-
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
-
-  root.render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  );
-}
-```
-
-You can also add TanStack Query Devtools to the root route (optional).
-
-```tsx
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-
-const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <Outlet />
-      <ReactQueryDevtools buttonPosition="top-right" />
-      <TanStackRouterDevtools />
-    </>
-  ),
-});
-```
-
-Now you can use `useQuery` to fetch your data.
-
-```tsx
-import { useQuery } from "@tanstack/react-query";
-
-import "./App.css";
-
-function App() {
-  const { data } = useQuery({
-    queryKey: ["people"],
-    queryFn: () =>
-      fetch("https://swapi.dev/api/people")
-        .then((res) => res.json())
-        .then((data) => data.results as { name: string }[]),
-    initialData: [],
-  });
-
-  return (
-    <div>
-      <ul>
-        {data.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-export default App;
-```
-
-You can find out everything you need to know on how to use React-Query in the [React-Query documentation](https://tanstack.com/query/latest/docs/framework/react/overview).
-
-## State Management
-
-Another common requirement for React applications is state management. There are many options for state management in React. TanStack Store provides a great starting point for your project.
-
-First you need to add TanStack Store as a dependency:
-
-```bash
-pnpm add @tanstack/store
-```
-
-Now let's create a simple counter in the `src/App.tsx` file as a demonstration.
-
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-function App() {
-  const count = useStore(countStore);
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-    </div>
-  );
-}
-
-export default App;
-```
-
-One of the many nice features of TanStack Store is the ability to derive state from other state. That derived state will update when the base state updates.
-
-Let's check this out by doubling the count using derived state.
-
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store, Derived } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-const doubledStore = new Derived({
-  fn: () => countStore.state * 2,
-  deps: [countStore],
-});
-doubledStore.mount();
-
-function App() {
-  const count = useStore(countStore);
-  const doubledCount = useStore(doubledStore);
-
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-      <div>Doubled - {doubledCount}</div>
-    </div>
-  );
-}
-
-export default App;
-```
-
-We use the `Derived` class to create a new store that is derived from another store. The `Derived` class has a `mount` method that will start the derived store updating.
-
-Once we've created the derived store we can use it in the `App` component just like we would any other store using the `useStore` hook.
-
-You can find out everything you need to know on how to use TanStack Store in the [TanStack Store documentation](https://tanstack.com/store/latest).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
+MIT
