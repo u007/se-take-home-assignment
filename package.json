@@ -1,0 +1,30 @@
+{
+  "name": "feedme-order-controller",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter pos dev",
+    "build": "pnpm --filter pos build",
+    "test": "pnpm --filter pos test",
+    "lint": "pnpm --filter pos lint",
+    "format": "pnpm --filter pos format",
+    "check": "pnpm --filter pos check",
+    "db:generate": "pnpm --filter pos db:generate",
+    "db:migrate": "pnpm --filter pos db:migrate",
+    "db:push": "pnpm --filter pos db:push",
+    "db:pull": "pnpm --filter pos db:pull",
+    "db:studio": "pnpm --filter pos db:studio",
+    "backend:test": "./scripts/test.sh",
+    "backend:build": "./scripts/build.sh",
+    "backend:run": "./scripts/run.sh"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}
