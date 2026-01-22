@@ -56,6 +56,14 @@ export const bots = sqliteTable('bots', {
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),
 })
 
+// Distributed lock table for preventing concurrent resume operations
+// Uses optimistic locking with expiry to prevent thundering herd on GET /api/orders
+export const resumeLocks = sqliteTable('resume_locks', {
+  id: text('id').primaryKey(), // Lock name (e.g., 'resume_processing')
+  lockedAt: integer('locked_at', { mode: 'timestamp' }).notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+})
+
 // Types for TypeScript
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
@@ -63,3 +71,5 @@ export type Order = typeof orders.$inferSelect
 export type NewOrder = typeof orders.$inferInsert
 export type Bot = typeof bots.$inferSelect
 export type NewBot = typeof bots.$inferInsert
+export type ResumeLock = typeof resumeLocks.$inferSelect
+export type NewResumeLock = typeof resumeLocks.$inferInsert

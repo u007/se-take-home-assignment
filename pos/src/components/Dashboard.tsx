@@ -367,21 +367,21 @@ export function Dashboard() {
             {/* Column Factory */}
             {[
               {
-                title: 'Queue',
+                title: 'PENDING',
                 orders: pendingOrders,
                 color: 'text-amber-500',
                 dot: 'bg-amber-500',
                 empty: 'System Idle',
               },
               {
-                title: 'Processing',
+                title: 'PROCESSING',
                 orders: processingOrders,
                 color: 'text-blue-500',
                 dot: 'bg-blue-500',
                 empty: 'No Active Tasks',
               },
               {
-                title: 'Done',
+                title: 'DONE',
                 orders: completeOrders,
                 color: 'text-emerald-500',
                 dot: 'bg-emerald-500',

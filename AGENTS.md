@@ -80,8 +80,6 @@ pnpm check        # Run lint + format
 # Database commands (proxies to pos package)
 pnpm db:generate  # Generate Drizzle migrations
 pnpm db:migrate   # Run migrations
-pnpm db:push      # Push schema changes
-pnpm db:pull      # Pull schema from database
 pnpm db:studio    # Open Drizzle Studio
 
 # Backend CLI (scripts in root)
@@ -372,6 +370,7 @@ bots (id, status, current_order_id, deleted_at)
 - **Update seed files** when changing unique constraints or adding new tables
 - **Test migrations** in development environment before applying to production
 - **Do not run db:studio script** without explicit user request
+- **Do not use drizzle-kit push or pull commands** - always use proper migrations via generate and migrate
 
 ### Service Development
 

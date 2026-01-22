@@ -143,6 +143,41 @@ All requirements have been verified and tested. See `TEST.md` for detailed test 
 - **Foreign Key Cascades**: User delete preserves orders, Bot delete unassigns orders
 - **Backend Bot Processing**: Order completion scheduled via Upstash QStash (10s delay)
 - **Processing Resume**: On startup requests, in-flight orders are resumed and completed/scheduled as needed
+- **Distributed Locking**: Database-level locks (resume_locks table) prevent concurrent recovery operations on single instance
+
+### Scaling Limitations
+
+**⚠️ Horizontal Scaling Not Supported**
+
+This implementation is designed for **single-instance deployment** and does not support horizontal scaling with multiple server instances. Here's why:
+
+**Distributed Lock Mechanism:**
+- The `resumeProcessingOrders()` recovery function uses a simple database lock (resume_locks table) with TTL
+- This lock works only for preventing concurrent operations within a single instance
+- With multiple instances, different servers would simultaneously acquire the lock and run duplicate recovery operations
+
+**What Would Be Needed for Horizontal Scaling:**
+1. **Redis or similar** distributed cache for cross-instance locking (SET NX with TTL)
+2. **Shared message queue** (RabbitMQ, AWS SQS, etc.) for order distribution instead of polling
+3. **Consensus mechanism** for bot assignment across instances (e.g., lease-based leader election)
+4. **Distributed tracing** to ensure exactly-once processing guarantees
+
+**Current Bottlenecks:**
+- All servers poll `GET /api/orders` every 2 seconds (thundering herd on scale)
+- Resume lock only prevents redundant work on same instance
+- Bot assignment via atomic transactions works per-instance only
+- No way to coordinate which instance claims which order across cluster
+
+**Single Instance Guarantees:**
+- ✅ No duplicate order processing
+- ✅ No race conditions in bot assignment
+- ✅ Automatic recovery from crashes
+- ✅ Consistent state across all operations
+
+For production multi-instance deployments, recommend implementing a proper job queue system (Bull, Temporal, or similar).
+
+### System Documentation
+- **[ORDERS_BOT_QUEUE.md](./ORDERS_BOT_QUEUE.md)**: Comprehensive explanation of the orders → bot queue system, including data structures, assignment flow, recovery logic, stuck bot conditions, client-side state management, and the complete order lifecycle with failure scenarios.
 
 ### Environment
 - `APP_BASE_URL` is required so QStash can call back into `/api/orders/complete` (use a public URL in dev, e.g. via ngrok).
