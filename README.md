@@ -66,19 +66,41 @@ You must implement **either** frontend or backend components as described below:
 - Implementation choice: **Frontend** (TanStack Start + React + TypeScript)
 - Public URL: **https://pos-m391mv8bx-james-tans-projects-cd0a4434.vercel.app**
 
-## Local Setup
+## Getting Started
 
 ### Prerequisites
 - Node.js 20+
-- pnpm
+- pnpm (or bun)
 
-### Installation and Run
+### Quick Start (from project root)
+
+**Option 1: Using Make**
 ```bash
-# Install dependencies
+make dev
+# Opens http://localhost:3000
+```
+
+**Option 2: Using pnpm (workspace)**
+```bash
+# Install all dependencies
+pnpm install
+
+# Run development server
+pnpm dev
+# Opens http://localhost:3000
+```
+
+**Option 3: Using bun**
+```bash
+cd pos && bun run dev
+```
+
+### Local Setup (from pos directory)
+```bash
 cd pos
 pnpm install
 
-# For local development with SQLite
+# For local development with SQLite (optional)
 pnpm add better-sqlite3 --save-optional
 
 # Run development server
