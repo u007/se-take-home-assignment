@@ -92,7 +92,6 @@ export function OrderCard({
         isVIP
           ? 'border-amber-500/30 bg-gradient-to-br from-amber-500/[0.08] to-transparent'
           : 'bg-card/40 backdrop-blur-md',
-        status === 'PENDING' && 'urgency-high',
         className,
       )}
     >
@@ -112,7 +111,7 @@ export function OrderCard({
                 isVIP ? 'text-amber-500' : 'text-foreground',
               )}
             >
-              #{String(orderNumber).padStart(3, '0')}
+              #{String(orderNumber).padStart(4, '0')}
             </div>
           </div>
 

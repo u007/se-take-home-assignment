@@ -17,6 +17,7 @@ const config = defineConfig({
   },
   server: {
     allowedHosts: [
+      'se-take-home-assignment-sigma.vercel.app',
       'feedme.mercstudio.com',
       'localhost',
     ]

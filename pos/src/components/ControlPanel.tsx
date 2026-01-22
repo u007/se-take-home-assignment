@@ -26,8 +26,8 @@ export function ControlPanel({
   const canManageBots = isManager
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-fit px-6">
-      <div className="glass shadow-2xl rounded-md px-6 py-4 flex items-center gap-8 ring-1 ring-white/10">
+    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-fit px-6 pointer-events-none">
+      <div className="glass shadow-2xl rounded-md px-6 py-4 flex items-center gap-8 ring-1 ring-white/10 pointer-events-auto">
         {/* Order Controls */}
         <div className="flex items-center gap-4">
           <div className="flex flex-col">

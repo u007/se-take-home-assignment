@@ -47,12 +47,18 @@ export const Route = createFileRoute('/api/bots/$id')({
             .set(updates)
             .where(and(eq(bots.id, params.id), isNull(bots.deletedAt)))
 
-          // If bot was processing an order and is now being updated to idle/removed,
-          // return the order to PENDING
-          if (
+          // If bot was processing an order and is now being stopped (not reassigned),
+          // return the order to PENDING.
+          // Don't reset the order if we're reassigning the bot to a new order.
+          const isReassigning =
+            body.status === 'PROCESSING' &&
+            body.currentOrderId !== null &&
+            body.currentOrderId !== bot.currentOrderId
+          const isStopping =
             bot.currentOrderId &&
             (body.status === 'IDLE' || body.currentOrderId === null)
-          ) {
+
+          if (isStopping && !isReassigning) {
             await db
               .update(orders)
               .set({

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useAuthStore } from '@/store/auth'
 import { OrderCard } from './OrderCard'
@@ -7,16 +7,16 @@ import { ControlPanel } from './ControlPanel'
 import { OfflineIndicator } from './OfflineIndicator'
 import {
   LogOut,
-  LayoutDashboard,
-  Settings,
-  User,
-  Bell,
-  ChevronRight,
   Activity,
   Cpu,
-  ListChecks,
+  ChevronDown,
+  ChevronUp,
+  Bell,
+  Settings,
 } from 'lucide-react'
 import mcdLogo from '../assets/mcd_logo.png'
+import { botProcessor } from '@/lib/bot-processor'
+import { botStore, botActions } from '@/store/bot'
 import { Button } from './ui/button'
 import { useQuery } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
@@ -42,6 +42,8 @@ export function Dashboard() {
   const navigate = useNavigate()
   const { state: authState, actions: authActions } = useAuthStore()
   const [isCreating, setIsCreating] = useState(false)
+  const [botsCollapsed, setBotsCollapsed] = useState(true)
+  const assigningRef = useRef<Set<string>>(new Set()) // Track orders being assigned
 
   // Fetch orders
   const {
@@ -77,6 +79,7 @@ export function Dashboard() {
   const bots = botsData?.bots || []
 
   // Group orders by status
+  // Ensure PROCESSING orders never appear in pending column (defensive filtering)
   const pendingOrders = orders.filter(
     (o: DashboardOrder) => o.status === 'PENDING',
   )
@@ -170,11 +173,17 @@ export function Dashboard() {
   // Auto-assign orders to idle bots
   useEffect(() => {
     const idleBots = bots.filter((b: DashboardBot) => b.status === 'IDLE')
-    const unassignedOrders = pendingOrders
+    // Filter out orders that are already being assigned
+    const unassignedOrders = pendingOrders.filter(
+      (o: DashboardOrder) => !assigningRef.current.has(o.id),
+    )
 
     if (idleBots.length > 0 && unassignedOrders.length > 0) {
       const bot = idleBots[0]
       const order = unassignedOrders[0]
+
+      // Mark this order as being assigned
+      assigningRef.current.add(order.id)
 
       const assignOrder = async () => {
         try {
@@ -188,6 +197,13 @@ export function Dashboard() {
           })
 
           if (!orderResponse.ok) {
+            // If order is already being processed (409), just skip and refetch
+            if (orderResponse.status === 409) {
+              console.log(`Order ${order.id} already assigned, skipping`)
+              await refetchOrders()
+              await refetchBots()
+              return
+            }
             const errorText = await orderResponse.text()
             throw new Error(`Failed to update order: ${errorText}`)
           }
@@ -214,16 +230,53 @@ export function Dashboard() {
             throw new Error(`Failed to update bot: ${errorText}`)
           }
 
+          // Start the client-side processing timer
+          botProcessor.startOrderProcessing(bot.id, order.id)
+
           await refetchOrders()
           await refetchBots()
         } catch (error) {
           console.error('Error assigning order:', error)
+        } finally {
+          // Remove from in-flight tracking
+          assigningRef.current.delete(order.id)
         }
       }
 
       void assignOrder()
     }
   }, [bots, pendingOrders, refetchOrders, refetchBots])
+
+  // Resume client-side timers for bots that are already processing
+  // This handles page reloads or tab switching where timers were lost
+  useEffect(() => {
+    // Only run when data is loaded
+    if (ordersLoading || botsLoading) return
+
+    const BOT_PROCESSING_TIME_MS = 10000 // 10 seconds
+
+    processingOrders.forEach((order: DashboardOrder) => {
+      if (order.botId) {
+        // Calculate remaining time based on order's updatedAt
+        const createdAtMs = new Date(order.createdAt).getTime()
+        const elapsedMs = Date.now() - createdAtMs
+        const remainingMs = Math.max(0, BOT_PROCESSING_TIME_MS - elapsedMs)
+
+        if (remainingMs > 0) {
+          // Resume timer with correct remaining time
+          botActions.setBotState(order.botId, {
+            status: 'PROCESSING',
+            currentOrderId: order.id,
+            remainingMs,
+            lastTick: Date.now(),
+          })
+        }
+        // If remainingMs is 0, the server-side callback should complete the order soon
+      }
+    })
+    // Only run on mount and when loading completes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ordersLoading, botsLoading])
 
   return (
     <div className="min-h-screen bg-mesh flex flex-col selection:bg-primary/20">
@@ -323,8 +376,8 @@ export function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto pb-32">
-        <div className="max-w-[1600px] mx-auto px-8 py-10">
+      <main className="flex-1 overflow-auto">
+        <div className="max-w-[1600px] mx-auto px-8 pt-10 pb-40">
           {/* Three Column Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Column Factory */}
@@ -415,78 +468,6 @@ export function Dashboard() {
               </div>
             ))}
           </div>
-
-          {/* Bots Section */}
-          <div className="mt-20">
-            <div className="flex items-center justify-between mb-8 px-2">
-              <div className="flex flex-col">
-                <h3 className="text-xs font-black text-foreground uppercase tracking-[0.4em] mb-1">
-                  Cooking bots
-                </h3>
-              </div>
-
-              <div className="flex items-center gap-2 glass px-3 py-1.5 rounded-md">
-                <div className="flex items-center gap-1.5 px-3 border-r border-border/40">
-                  <span className="w-1.5 h-1.5 rounded-sm bg-emerald-500" />
-                  <span className="text-[10px] font-black uppercase text-muted-foreground">
-                    {
-                      bots.filter((b: DashboardBot) => b.status === 'IDLE')
-                        .length
-                    }{' '}
-                    Standby
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 px-3">
-                  <span className="w-1.5 h-1.5 rounded-sm bg-blue-500 animate-pulse" />
-                  <span className="text-[10px] font-black uppercase text-blue-500">
-                    {
-                      bots.filter(
-                        (b: DashboardBot) => b.status === 'PROCESSING',
-                      ).length
-                    }{' '}
-                    Engaged
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {botsLoading ? (
-                Array(5)
-                  .fill(0)
-                  .map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-32 glass rounded-md animate-pulse"
-                    />
-                  ))
-              ) : bots.length === 0 ? (
-                <div className="col-span-full h-40 glass rounded-lg border-dashed border-border/40 flex flex-col items-center justify-center text-center p-8 grayscale opacity-50">
-                  <Cpu className="w-10 h-10 text-muted-foreground/30 mb-3" />
-                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/40">
-                    No units deployed
-                  </p>
-                </div>
-              ) : (
-                bots.map((bot: DashboardBot) => {
-                  const currentOrder = bot.currentOrderId
-                    ? orders.find(
-                        (o: DashboardOrder) => o.id === bot.currentOrderId,
-                      )
-                    : null
-                  return (
-                    <BotDisplay
-                      key={bot.id}
-                      botId={bot.id}
-                      status={bot.status}
-                      currentOrderId={bot.currentOrderId}
-                      orderNumber={currentOrder?.orderNumber ?? null}
-                    />
-                  )
-                })
-              )}
-            </div>
-          </div>
         </div>
       </main>
 
@@ -498,6 +479,144 @@ export function Dashboard() {
         botCount={bots.length}
         isCreating={isCreating}
       />
+
+      {/* Fixed Bottom Bots Panel */}
+      <div className="fixed bottom-0 left-0 right-0 z-[60] border-t border-border/40 bg-background/90 backdrop-blur-xl">
+        {/* Collapsed Header */}
+        <div
+          className="flex items-center justify-between px-8 py-3 cursor-pointer hover:bg-muted/30 transition-colors"
+          onClick={() => setBotsCollapsed(!botsCollapsed)}
+        >
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Cpu className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-xs font-black text-foreground uppercase tracking-[0.3em]">
+                Cooking bots
+              </h3>
+            </div>
+
+            {/* Collapsed Summary */}
+            {botsCollapsed && (
+              <div className="flex items-center gap-4">
+                {botsLoading ? (
+                  <div className="h-4 w-24 animate-pulse bg-muted/30 rounded" />
+                ) : bots.length === 0 ? (
+                  <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
+                    No units deployed
+                  </span>
+                ) : (
+                  <>
+                    {bots
+                      .filter((b: DashboardBot) => b.status === 'PROCESSING')
+                      .map((bot: DashboardBot) => {
+                        const currentOrder = bot.currentOrderId
+                          ? orders.find(
+                              (o: DashboardOrder) =>
+                                o.id === bot.currentOrderId,
+                            )
+                          : null
+                        return (
+                          <div
+                            key={bot.id}
+                            className="flex items-center gap-1.5 px-2 py-0.5 rounded-sm bg-blue-500/10 border border-blue-500/20"
+                          >
+                            <span className="w-1 h-1 rounded-full bg-blue-500 animate-pulse" />
+                            <span className="text-[10px] font-mono font-bold text-blue-500">
+                              #{currentOrder?.orderNumber ?? '?'}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    {bots.filter((b: DashboardBot) => b.status === 'IDLE')
+                      .length > 0 && (
+                      <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
+                        {
+                          bots.filter((b: DashboardBot) => b.status === 'IDLE')
+                            .length
+                        }{' '}
+                        idle
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* Stats */}
+            <div className="flex items-center gap-2 glass px-3 py-1 rounded-md">
+              <div className="flex items-center gap-1.5 px-2 border-r border-border/40">
+                <span className="w-1 h-1 rounded-sm bg-emerald-500" />
+                <span className="text-[9px] font-black uppercase text-muted-foreground">
+                  {bots.filter((b: DashboardBot) => b.status === 'IDLE').length}{' '}
+                  Standby
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2">
+                <span className="w-1 h-1 rounded-sm bg-blue-500 animate-pulse" />
+                <span className="text-[9px] font-black uppercase text-blue-500">
+                  {
+                    bots.filter((b: DashboardBot) => b.status === 'PROCESSING')
+                      .length
+                  }{' '}
+                  Engaged
+                </span>
+              </div>
+            </div>
+
+            {botsCollapsed ? (
+              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            )}
+          </div>
+        </div>
+
+        {/* Expanded Content */}
+        {!botsCollapsed && (
+          <div className="border-t border-border/20 bg-muted/20">
+            <div className="max-w-[1600px] mx-auto px-8 py-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {botsLoading ? (
+                  Array(5)
+                    .fill(0)
+                    .map((_, i) => (
+                      <div
+                        key={i}
+                        className="h-28 glass rounded-md animate-pulse"
+                      />
+                    ))
+                ) : bots.length === 0 ? (
+                  <div className="col-span-full h-32 glass rounded-lg border-dashed border-border/40 flex flex-col items-center justify-center text-center p-8 grayscale opacity-50">
+                    <Cpu className="w-8 h-8 text-muted-foreground/30 mb-2" />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
+                      No units deployed
+                    </p>
+                  </div>
+                ) : (
+                  bots.map((bot: DashboardBot) => {
+                    const currentOrder = bot.currentOrderId
+                      ? orders.find(
+                          (o: DashboardOrder) => o.id === bot.currentOrderId,
+                        )
+                      : null
+                    return (
+                      <BotDisplay
+                        key={bot.id}
+                        botId={bot.id}
+                        status={bot.status}
+                        currentOrderId={bot.currentOrderId}
+                        orderNumber={currentOrder?.orderNumber ?? null}
+                      />
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Offline Indicator */}
       <OfflineIndicator />

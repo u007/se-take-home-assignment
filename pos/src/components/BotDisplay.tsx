@@ -98,7 +98,7 @@ export function BotDisplay({
                 </span>
               </div>
               <span className="font-mono text-[10px] font-black text-blue-500 bg-blue-500/10 px-1.5 rounded-sm border border-blue-500/20">
-                ORDER #{String(orderNumber).padStart(3, '0')}
+                ORDER #{String(orderNumber).padStart(4, '0')}
               </span>
             </div>
 

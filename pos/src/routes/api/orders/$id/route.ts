@@ -35,6 +35,21 @@ export const Route = createFileRoute('/api/orders/$id')({
           const now = new Date()
           const nowMs = now.getTime()
 
+          // Prevent assigning a bot to an order that's already being processed
+          if (
+            body.status === 'PROCESSING' &&
+            body.botId !== undefined &&
+            body.botId !== null &&
+            order.status === 'PROCESSING' &&
+            order.botId !== null &&
+            order.botId !== body.botId
+          ) {
+            return Response.json(
+              { error: 'Order is already being processed by another bot' },
+              { status: 409 },
+            )
+          }
+
           const shouldScheduleCompletion =
             body.status === 'PROCESSING' &&
             body.botId !== undefined &&
@@ -57,17 +72,26 @@ export const Route = createFileRoute('/api/orders/$id')({
               )
             }
 
-            const callbackUrl = new URL('/api/orders/complete', baseUrl).toString()
-            const client = new Client({
-              token: process.env.QSTASH_TOKEN,
-            })
+            try {
+              const callbackUrl = new URL('/api/orders/complete', baseUrl).toString()
+              const client = new Client({
+                token: process.env.QSTASH_TOKEN,
+              })
 
-            await client.publishJSON({
-              url: callbackUrl,
-              body: { orderId: params.id, botId: body.botId },
-              delay: BOT_PROCESSING_DELAY_SECONDS,
-              deduplicationId: `${params.id}:${nowMs}`,
-            })
+              await client.publishJSON({
+                url: callbackUrl,
+                body: { orderId: params.id, botId: body.botId },
+                delay: BOT_PROCESSING_DELAY_SECONDS,
+                deduplicationId: `${params.id}-${nowMs}`,
+              })
+              console.log(`[QStash] Scheduled order completion for ${params.id} in ${BOT_PROCESSING_DELAY_SECONDS}s`)
+            } catch (qstashError) {
+              console.error('[QStash] Failed to schedule order completion:', qstashError)
+              return Response.json(
+                { error: 'Failed to schedule order completion. Check APP_BASE_URL format (must include protocol like https://)' },
+                { status: 500 },
+              )
+            }
           }
 
           // Build update object

@@ -67,7 +67,7 @@ const resumeProcessingOrders = async () => {
         url: callbackUrl,
         body: { orderId: order.id, botId: order.botId },
         delay: remainingSeconds,
-        deduplicationId: `${order.id}:${updatedAtMs}`,
+        deduplicationId: `${order.id}-${updatedAtMs}`,
       })
     }
   }
