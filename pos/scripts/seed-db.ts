@@ -1,4 +1,5 @@
 import { drizzle } from 'drizzle-orm/libsql';
+import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import * as schema from '../src/db/schema';
 import { uuidv7 } from '../src/lib/uuid7';
@@ -35,7 +36,7 @@ console.log('Migrations complete!');
 console.log('Seeding demo users...');
 
 const passwordHash = Buffer.from('password123').toString('base64');
-const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
+const now = new Date();
 
 const demoUsers = [
   {
@@ -99,8 +100,8 @@ if (existingBots.length === 0) {
 }
 
 // Verify seeded data
-const userCountResult = await db.select({ count: schema.sql`count(*)` }).from(schema.users);
-const botCountResult = await db.select({ count: schema.sql`count(*)` }).from(schema.bots);
+const userCountResult = await db.select({ count: sql`count(*)` }).from(schema.users);
+const botCountResult = await db.select({ count: sql`count(*)` }).from(schema.bots);
 const userCount = userCountResult[0].count;
 const botCount = botCountResult[0].count;
 
