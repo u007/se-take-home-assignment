@@ -7,7 +7,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 // Load environment variables from .env file
-dotenv.config({ path: path.resolve(process.cwd(), 'pos/.env.local') });
+const envFile = path.resolve(process.cwd(), '../pos/.env.local');
+dotenv.config({ path: envFile });
 
 const tursoUrl = process.env.TURSO_DATABASE_URL;
 const tursoAuthToken = process.env.TURSO_AUTH_TOKEN;
