@@ -1,7 +1,8 @@
 import { Badge } from './ui/badge'
-import { WifiOff, Cloud, CloudOff, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react'
+import { WifiOff, CloudOff, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { useSyncManager } from '@/lib/sync-manager'
 import { useEffect, useState } from 'react'
+import { cn } from '@/lib/utils'
 
 export function OfflineIndicator() {
   const { state: syncState } = useSyncManager()
@@ -10,65 +11,80 @@ export function OfflineIndicator() {
   useEffect(() => {
     if (syncState.isSyncing) {
       setShowSyncStatus(true)
-      const timeout = setTimeout(() => setShowSyncStatus(false), 2000)
+      const timeout = setTimeout(() => setShowSyncStatus(false), 3000)
       return () => clearTimeout(timeout)
     }
   }, [syncState.isSyncing])
 
-  if (syncState.isOnline && syncState.pendingOperations === 0) {
+  if (
+    syncState.isOnline &&
+    syncState.pendingOperations === 0 &&
+    !showSyncStatus
+  ) {
     return null
   }
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2">
+    <div className="fixed top-20 right-8 z-50 flex flex-col items-end gap-3 pointer-events-none">
       {/* Offline Status */}
       {!syncState.isOnline && (
-        <Badge
-          variant="outline"
-          className="gap-2 bg-destructive/20 text-destructive border-destructive/50 px-3 py-2 font-semibold"
-        >
-          <WifiOff className="w-4 h-4" />
-          Offline Mode
-        </Badge>
+        <div className="glass shadow-2xl rounded-2xl px-4 py-2 flex items-center gap-3 border-destructive/20 bg-destructive/5 animate-slide-in-right">
+          <div className="p-1.5 rounded-lg bg-destructive/10">
+            <WifiOff className="w-3.5 h-3.5 text-destructive" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase tracking-widest text-destructive">
+              Offline Mode
+            </span>
+            <span className="text-[9px] font-bold text-muted-foreground/60">
+              Local persistence active
+            </span>
+          </div>
+        </div>
       )}
 
       {/* Sync Status */}
-      {showSyncStatus && syncState.isOnline && (
-        <Badge
-          variant="outline"
-          className={`gap-2 px-3 py-2 font-semibold ${
-            syncState.isSyncing
-              ? 'bg-blue-500/20 text-blue-400 border-blue-500/50'
-              : syncState.pendingOperations > 0
-                ? 'bg-amber-500/20 text-amber-400 border-amber-500/50'
-                : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
-          }`}
-        >
-          {syncState.isSyncing ? (
-            <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              Syncing...
-            </>
-          ) : syncState.pendingOperations > 0 ? (
-            <>
-              <CloudOff className="w-4 h-4" />
-              {syncState.pendingOperations} pending
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="w-4 h-4" />
-              Synced
-            </>
-          )}
-        </Badge>
-      )}
-
-      {/* Pending Operations Notice */}
-      {!syncState.isSyncing && syncState.pendingOperations > 0 && (
-        <div className="text-xs text-muted-foreground max-w-[200px] text-right">
-          Changes will sync when connection is restored
-        </div>
-      )}
+      {(showSyncStatus || syncState.pendingOperations > 0) &&
+        syncState.isOnline && (
+          <div
+            className={cn(
+              'glass shadow-2xl rounded-2xl px-4 py-2 flex items-center gap-3 animate-slide-in-right transition-all duration-500',
+              syncState.isSyncing
+                ? 'border-blue-500/20 bg-blue-500/5'
+                : 'border-emerald-500/20 bg-emerald-500/5',
+            )}
+          >
+            <div
+              className={cn(
+                'p-1.5 rounded-lg',
+                syncState.isSyncing
+                  ? 'bg-blue-500/10 text-blue-500'
+                  : 'bg-emerald-500/10 text-emerald-500',
+              )}
+            >
+              {syncState.isSyncing ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              )}
+            </div>
+            <div className="flex flex-col">
+              <span
+                className={cn(
+                  'text-[10px] font-black uppercase tracking-widest',
+                  syncState.isSyncing ? 'text-blue-500' : 'text-emerald-500',
+                )}
+              >
+                {syncState.isSyncing ? 'Data Sync' : 'Sync Complete'}
+              </span>
+              <span className="text-[9px] font-bold text-muted-foreground/60">
+                {syncState.pendingOperations > 0
+                  ? `${syncState.pendingOperations} operations pending`
+                  : 'Cloud synchronized'}
+              </span>
+            </div>
+          </div>
+        )}
     </div>
   )
 }

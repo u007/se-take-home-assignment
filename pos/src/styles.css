@@ -50,7 +50,12 @@
   --ring: oklch(0.55 0.15 250);
 
   /* Radius */
-  --radius: 0.5rem;
+  --radius: 0.75rem;
+
+  /* Glassmorphism */
+  --glass-bg: oklch(1 0 0 / 0.1);
+  --glass-border: oklch(1 0 0 / 0.2);
+  --glass-blur: 12px;
 }
 
 .dark {
@@ -77,6 +82,10 @@
   /* Accent (Dark Mode) */
   --accent: oklch(0.35 0.02 285);
   --accent-foreground: oklch(0.98 0 0);
+
+  /* Glassmorphism (Dark) */
+  --glass-bg: oklch(0 0 0 / 0.3);
+  --glass-border: oklch(1 0 0 / 0.1);
 }
 
 body {
@@ -111,6 +120,36 @@ code, .font-mono {
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
+
+  /* Custom Utilities */
+  --bg-glass: var(--glass-bg);
+  --border-glass: var(--glass-border);
+  --blur-glass: var(--glass-blur);
+}
+
+@layer utilities {
+  .glass {
+    background-color: var(--bg-glass);
+    backdrop-filter: blur(var(--blur-glass));
+    border: 1px solid var(--border-glass);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/50;
+  }
+
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-primary to-blue-400;
+  }
+
+  .bg-mesh {
+    background-color: var(--background);
+    background-image: 
+      radial-gradient(at 0% 0%, oklch(0.55 0.15 250 / 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, oklch(0.65 0.15 85 / 0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, oklch(0.55 0.15 145 / 0.1) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, oklch(0.60 0.18 85 / 0.1) 0px, transparent 50%);
+  }
 }
 
 @layer base {

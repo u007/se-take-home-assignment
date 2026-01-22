@@ -4,9 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Button } from './ui/button'
-import { Loader2 } from 'lucide-react'
+import {
+  Loader2,
+  LayoutDashboard,
+  Fingerprint,
+  Keyboard,
+  ShieldCheck,
+} from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import type { User } from '@/db/schema'
+import { cn } from '@/lib/utils'
 
 interface LoginFormData {
   username: string
@@ -48,10 +55,7 @@ export function LoginForm() {
         throw new Error(data.error || 'Login failed')
       }
 
-      // Store user in auth store
       authActions.login(data.user as User)
-
-      // Navigate to dashboard
       navigate({ to: '/' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
@@ -66,102 +70,134 @@ export function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="w-full max-w-md space-y-6">
+    <div className="min-h-screen bg-mesh flex items-center justify-center p-6 selection:bg-primary/20">
+      <div className="w-full max-w-md space-y-8">
         {/* Logo/Brand */}
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-black tracking-tight">
-            <span className="text-foreground">FEED</span>
-            <span className="text-primary">ME</span>
-          </h1>
-          <p className="text-muted-foreground">Order Controller</p>
+        <div className="text-center space-y-4">
+          <div className="inline-flex w-16 h-16 rounded-2xl bg-primary items-center justify-center shadow-2xl shadow-primary/30 mb-2">
+            <LayoutDashboard className="w-8 h-8 text-primary-foreground" />
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-5xl font-black tracking-tighter">
+              FEED<span className="text-primary italic">ME</span>
+            </h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground/60">
+              Quantum Order Controller
+            </p>
+          </div>
         </div>
 
         {/* Login Card */}
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle>Sign In</CardTitle>
-            <CardDescription>
-              Enter your credentials to access the system
+        <Card className="glass border-white/10 shadow-2xl rounded-[2.5rem] overflow-hidden">
+          <CardHeader className="pt-8 px-8 pb-4">
+            <CardTitle className="text-2xl font-black tracking-tight">
+              System Access
+            </CardTitle>
+            <CardDescription className="text-xs font-bold uppercase tracking-widest opacity-60">
+              Authentication Required
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent className="px-8 pb-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* Username */}
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  value={formData.username}
-                  onChange={(e) =>
-                    setFormData({ ...formData, username: e.target.value })
-                  }
-                  placeholder="Enter username"
-                  className="font-mono"
-                  required
-                />
+                <Label
+                  htmlFor="username"
+                  className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1"
+                >
+                  Network Identifier
+                </Label>
+                <div className="relative group">
+                  <Fingerprint className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40 transition-colors group-focus-within:text-primary" />
+                  <Input
+                    id="username"
+                    type="text"
+                    value={formData.username}
+                    onChange={(e) =>
+                      setFormData({ ...formData, username: e.target.value })
+                    }
+                    placeholder="Identifier"
+                    className="h-12 pl-11 rounded-2xl border-white/5 bg-background/50 backdrop-blur-sm focus:ring-primary/20 transition-all font-mono font-bold"
+                    required
+                  />
+                </div>
               </div>
 
               {/* Password */}
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  placeholder="Enter password"
-                  className="font-mono"
-                  required
-                />
+                <Label
+                  htmlFor="password"
+                  className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1"
+                >
+                  Access Key
+                </Label>
+                <div className="relative group">
+                  <Keyboard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40 transition-colors group-focus-within:text-primary" />
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    placeholder="••••••••"
+                    className="h-12 pl-11 rounded-2xl border-white/5 bg-background/50 backdrop-blur-sm focus:ring-primary/20 transition-all font-mono font-bold"
+                    required
+                  />
+                </div>
               </div>
 
               {/* Error */}
               {error && (
-                <div className="p-3 rounded-md bg-destructive/10 border border-destructive/50 text-destructive text-sm">
+                <div className="p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-shake">
+                  <ShieldCheck className="w-4 h-4" />
                   {error}
                 </div>
               )}
 
               {/* Submit Button */}
-              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full h-12 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                size="lg"
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Signing in...
+                    Initializing
                   </>
                 ) : (
-                  'Sign In'
+                  'Authorize'
                 )}
               </Button>
             </form>
 
             {/* Demo Credentials */}
-            <div className="mt-6 pt-6 border-t border-border/50">
-              <p className="text-sm font-semibold text-muted-foreground mb-3">
-                Quick Fill (Demo Accounts):
+            <div className="mt-8 pt-6 border-t border-white/5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-4 text-center">
+                Authorized Testing Profiles
               </p>
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 gap-2">
                 {demoCredentials.map((cred) => (
                   <button
                     key={cred.username}
                     type="button"
-                    onClick={() => fillCredentials(cred.username, cred.password)}
-                    className="w-full flex items-center justify-between p-3 rounded-md border border-border/50 bg-card/50 hover:bg-card hover:border-primary/50 transition-all text-left group"
+                    onClick={() =>
+                      fillCredentials(cred.username, cred.password)
+                    }
+                    className="flex items-center justify-between p-3.5 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-primary/30 transition-all text-left group"
                   >
-                    <div>
-                      <div className="font-mono font-semibold text-foreground group-hover:text-primary transition-colors">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-primary/80 group-hover:text-primary transition-colors">
+                        {cred.role}
+                      </span>
+                      <span className="font-mono text-xs font-bold text-foreground/80 lowercase tracking-tighter">
                         {cred.username}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        Role: {cred.role}
-                      </div>
+                      </span>
                     </div>
-                    <div className="text-xs text-muted-foreground font-mono">
-                      password123
+                    <div className="w-8 h-8 rounded-xl bg-background/50 flex items-center justify-center opacity-40 group-hover:opacity-100 transition-all group-hover:bg-primary/20">
+                      <ShieldCheck className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
                     </div>
                   </button>
                 ))}
@@ -171,8 +207,10 @@ export function LoginForm() {
         </Card>
 
         {/* Footer */}
-        <div className="text-center text-sm text-muted-foreground">
-          <p>Industrial Kitchen Command Center</p>
+        <div className="text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40">
+            Industrial System Command • 2026
+          </p>
         </div>
       </div>
     </div>

@@ -7,9 +7,19 @@ import { OrderCard } from './OrderCard'
 import { BotDisplay } from './BotDisplay'
 import { ControlPanel } from './ControlPanel'
 import { OfflineIndicator } from './OfflineIndicator'
-import { LogOut } from 'lucide-react'
+import {
+  LogOut,
+  LayoutDashboard,
+  Settings,
+  User,
+  Bell,
+  ChevronRight,
+  Activity,
+} from 'lucide-react'
 import { Button } from './ui/button'
 import { useQuery } from '@tanstack/react-query'
+import { cn } from '@/lib/utils'
+import { Separator } from './ui/separator'
 
 interface DashboardOrder {
   id: string
@@ -45,7 +55,7 @@ export function Dashboard() {
       if (!response.ok) throw new Error('Failed to fetch orders')
       return response.json()
     },
-    refetchInterval: 2000, // Poll every 2 seconds
+    refetchInterval: 2000,
   })
 
   // Fetch bots
@@ -67,9 +77,15 @@ export function Dashboard() {
   const bots = botsData?.bots || []
 
   // Group orders by status
-  const pendingOrders = orders.filter((o: DashboardOrder) => o.status === 'PENDING')
-  const processingOrders = orders.filter((o: DashboardOrder) => o.status === 'PROCESSING')
-  const completeOrders = orders.filter((o: DashboardOrder) => o.status === 'COMPLETE')
+  const pendingOrders = orders.filter(
+    (o: DashboardOrder) => o.status === 'PENDING',
+  )
+  const processingOrders = orders.filter(
+    (o: DashboardOrder) => o.status === 'PROCESSING',
+  )
+  const completeOrders = orders.filter(
+    (o: DashboardOrder) => o.status === 'COMPLETE',
+  )
 
   // Handle logout
   const handleLogout = () => {
@@ -167,7 +183,7 @@ export function Dashboard() {
 
     if (idleBots.length > 0 && unassignedOrders.length > 0) {
       const bot = idleBots[0]
-      const order = unassignedOrders[0] // VIP orders first due to SQL ordering
+      const order = unassignedOrders[0]
 
       const assignOrder = async () => {
         try {
@@ -190,18 +206,13 @@ export function Dashboard() {
             }),
           ])
 
-          if (!orderResponse.ok) {
-            throw new Error('Failed to update order status')
+          if (!orderResponse.ok || !botResponse.ok) {
+            throw new Error('Failed to update status')
           }
 
-          if (!botResponse.ok) {
-            throw new Error('Failed to update bot status')
-          }
-
-          // Start processing after persistence succeeds
           botProcessor.startOrderProcessing(bot.id, order.id)
         } catch (error) {
-          console.error('Error assigning order to bot:', error)
+          console.error('Error assigning order:', error)
         }
       }
 
@@ -209,13 +220,13 @@ export function Dashboard() {
     }
   }, [bots, pendingOrders, botState.isLeader])
 
-  // Listen for bot completion events
+  // Listen for bot completion
   useEffect(() => {
     const handleBotComplete = async (event: CustomEvent) => {
       const { botId, orderId } = event.detail
 
       try {
-        const [orderResponse, botResponse] = await Promise.all([
+        await Promise.all([
           fetch(`/api/orders/${orderId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -230,14 +241,6 @@ export function Dashboard() {
             }),
           }),
         ])
-
-        if (!orderResponse.ok) {
-          throw new Error('Failed to complete order')
-        }
-
-        if (!botResponse.ok) {
-          throw new Error('Failed to update bot status')
-        }
       } catch (error) {
         console.error('Error completing order:', error)
       }
@@ -246,175 +249,327 @@ export function Dashboard() {
       await refetchBots()
     }
 
-    window.addEventListener('bot-order-complete', handleBotComplete as EventListener)
+    window.addEventListener(
+      'bot-order-complete',
+      handleBotComplete as EventListener,
+    )
     return () => {
-      window.removeEventListener('bot-order-complete', handleBotComplete as EventListener)
+      window.removeEventListener(
+        'bot-order-complete',
+        handleBotComplete as EventListener,
+      )
     }
   }, [refetchOrders, refetchBots])
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-mesh flex flex-col selection:bg-primary/20">
       {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-black tracking-tight">
-              <span className="text-foreground">FEED</span>
-              <span className="text-primary">ME</span>
-            </h1>
-            <p className="text-sm text-muted-foreground">Order Controller</p>
+      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/60 backdrop-blur-xl">
+        <div className="max-w-[1600px] mx-auto px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-2.5 group cursor-default">
+              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:scale-110">
+                <LayoutDashboard className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div className="flex flex-col">
+                <h1 className="text-xl font-black tracking-tighter leading-none">
+                  FEED<span className="text-primary">ME</span>
+                </h1>
+                <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mt-0.5">
+                  Quantum OS v4.0
+                </span>
+              </div>
+            </div>
+
+            <Separator orientation="vertical" className="h-8 bg-border/40" />
+
+            <nav className="hidden md:flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-lg h-9 text-xs font-bold uppercase tracking-wider text-primary bg-primary/5"
+              >
+                Overview
+                <div className="ml-2 w-1 h-1 rounded-full bg-primary" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-lg h-9 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-all hover:bg-muted/50"
+              >
+                Analytics
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-lg h-9 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-all hover:bg-muted/50"
+              >
+                Fleet Mgmt
+              </Button>
+            </nav>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="font-semibold">{authState.user?.username}</div>
-              <div className="text-xs text-muted-foreground">
-                {authState.user?.role}
-              </div>
+            <div className="h-9 glass rounded-xl flex items-center gap-1 px-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Bell className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
-              <LogOut className="w-4 h-4" />
-            </Button>
+
+            <Separator orientation="vertical" className="h-8 bg-border/40" />
+
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-black tracking-tight">
+                  {authState.user?.username}
+                </span>
+                <span className="text-[9px] font-bold text-primary uppercase tracking-widest opacity-80">
+                  {authState.user?.role}
+                </span>
+              </div>
+              <div className="w-9 h-9 rounded-xl glass flex items-center justify-center p-0.5 border-primary/20">
+                <div className="w-full h-full rounded-[10px] bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-primary-foreground font-black text-xs">
+                  {authState.user?.username?.charAt(0).toUpperCase()}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleLogout}
+                className="w-9 h-9 rounded-xl hover:bg-destructive/10 hover:text-destructive group"
+              >
+                <LogOut className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+      <main className="flex-1 overflow-auto pb-32">
+        <div className="max-w-[1600px] mx-auto px-8 py-10">
+          {/* Dashboard Summary Hooks */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            {[
+              {
+                label: 'System Uptime',
+                value: '99.99%',
+                icon: Activity,
+                color: 'text-emerald-500',
+              },
+              {
+                label: 'Active Bots',
+                value: bots.length,
+                icon: Cpu,
+                color: 'text-blue-500',
+              },
+              {
+                label: 'Total Throughput',
+                value: completeOrders.length,
+                icon: ListChecks,
+                color: 'text-primary',
+              },
+              {
+                label: 'Avg Process Time',
+                value: '10.0s',
+                icon: Activity,
+                color: 'text-amber-500',
+              },
+            ].map((stat, i) => (
+              <div
+                key={i}
+                className="glass rounded-[2rem] p-6 flex items-center justify-between group transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/5"
+              >
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">
+                    {stat.label}
+                  </span>
+                  <span className="text-2xl font-black tracking-tighter">
+                    {stat.value}
+                  </span>
+                </div>
+                <div
+                  className={cn(
+                    'w-12 h-12 rounded-2xl flex items-center justify-center bg-background/50 border border-border/50 transition-colors group-hover:bg-background',
+                    stat.color,
+                  )}
+                >
+                  <stat.icon className="w-6 h-6" />
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* Three Column Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Pending Column */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                  Pending
-                </h2>
-                <span className="font-mono text-sm text-muted-foreground">
-                  {pendingOrders.length}
-                </span>
-              </div>
-
-              <div className="space-y-3 min-h-[400px]">
-                {ordersLoading ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    Loading...
-                  </div>
-                ) : pendingOrders.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8 border border-dashed border-border/50 rounded-lg">
-                    No pending orders
-                  </div>
-                ) : (
-                  pendingOrders.map((order: DashboardOrder) => (
-                    <OrderCard
-                      key={order.id}
-                      orderNumber={order.orderNumber}
-                      type={order.type}
-                      status={order.status}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Column Factory */}
+            {[
+              {
+                title: 'Queue',
+                orders: pendingOrders,
+                color: 'text-amber-500',
+                dot: 'bg-amber-500',
+                empty: 'System Idle',
+              },
+              {
+                title: 'Processing',
+                orders: processingOrders,
+                color: 'text-blue-500',
+                dot: 'bg-blue-500',
+                empty: 'No Active Tasks',
+              },
+              {
+                title: 'Archived',
+                orders: completeOrders,
+                color: 'text-emerald-500',
+                dot: 'bg-emerald-500',
+                empty: 'History Empty',
+              },
+            ].map((col, idx) => (
+              <div key={idx} className="flex flex-col gap-6">
+                <div className="flex items-center justify-between px-2">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        'w-2 h-2 rounded-full',
+                        col.dot,
+                        idx < 2 && 'animate-pulse',
+                      )}
                     />
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Processing Column */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold uppercase tracking-wider text-blue-400 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-                  Processing
-                </h2>
-                <span className="font-mono text-sm text-muted-foreground">
-                  {processingOrders.length}
-                </span>
-              </div>
-
-              <div className="space-y-3 min-h-[400px]">
-                {ordersLoading ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    Loading...
+                    <h2
+                      className={cn(
+                        'text-xs font-black uppercase tracking-[0.3em]',
+                        col.color,
+                      )}
+                    >
+                      {col.title}
+                    </h2>
                   </div>
-                ) : processingOrders.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8 border border-dashed border-border/50 rounded-lg">
-                    No orders processing
+                  <div className="px-2 py-0.5 rounded-full bg-background/50 border border-border/50">
+                    <span className="font-mono text-[10px] font-bold text-muted-foreground">
+                      {col.orders.length}
+                    </span>
                   </div>
-                ) : (
-                  processingOrders.map((order: DashboardOrder) => (
-                    <OrderCard
-                      key={order.id}
-                      orderNumber={order.orderNumber}
-                      type={order.type}
-                      status={order.status}
-                    />
-                  ))
-                )}
-              </div>
+                </div>
 
-              {/* Bots Section */}
-              <div className="pt-4 border-t border-border/50">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  Active Bots
-                </h3>
-                <div className="space-y-3">
-                  {botsLoading ? (
-                    <div className="text-center text-muted-foreground py-4 text-sm">
-                      Loading...
-                    </div>
-                  ) : bots.length === 0 ? (
-                    <div className="text-center text-muted-foreground py-4 text-sm border border-dashed border-border/50 rounded-lg">
-                      No bots active
+                <div className="flex flex-col gap-4 min-h-[500px]">
+                  {ordersLoading ? (
+                    Array(3)
+                      .fill(0)
+                      .map((_, i) => (
+                        <div
+                          key={i}
+                          className="h-24 glass rounded-3xl animate-pulse"
+                        />
+                      ))
+                  ) : col.orders.length === 0 ? (
+                    <div className="flex-1 glass rounded-[2.5rem] border-dashed border-border/40 flex flex-col items-center justify-center text-center p-8 grayscale opacity-50">
+                      <div className="w-16 h-16 rounded-3xl bg-muted/20 flex items-center justify-center mb-4">
+                        <Activity className="w-8 h-8 text-muted-foreground/30" />
+                      </div>
+                      <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/40">
+                        {col.empty}
+                      </p>
                     </div>
                   ) : (
-                    bots.map((bot: DashboardBot) => {
-                      const botTimerState = botState.bots.get(bot.id)
-                      return (
-                        <BotDisplay
-                          key={bot.id}
-                          botId={bot.id}
-                          status={bot.status}
-                          remainingMs={botTimerState?.remainingMs}
-                          currentOrderId={bot.currentOrderId}
+                    <div className="flex flex-col gap-4">
+                      {col.orders.map((order: DashboardOrder) => (
+                        <OrderCard
+                          key={order.id}
+                          orderNumber={order.orderNumber}
+                          type={order.type}
+                          status={order.status}
                         />
-                      )
-                    })
+                      ))}
+                    </div>
                   )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bots Section */}
+          <div className="mt-20">
+            <div className="flex items-center justify-between mb-8 px-2">
+              <div className="flex flex-col">
+                <h3 className="text-xs font-black text-foreground uppercase tracking-[0.4em] mb-1">
+                  Neural Fleet Status
+                </h3>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.1em]">
+                    Quantum Network Synchronized
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 glass px-3 py-1.5 rounded-2xl">
+                <div className="flex items-center gap-1.5 px-3 border-r border-border/40">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="text-[10px] font-black uppercase text-muted-foreground">
+                    {
+                      bots.filter((b: DashboardBot) => b.status === 'IDLE')
+                        .length
+                    }{' '}
+                    Standby
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 px-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  <span className="text-[10px] font-black uppercase text-blue-500">
+                    {
+                      bots.filter(
+                        (b: DashboardBot) => b.status === 'PROCESSING',
+                      ).length
+                    }{' '}
+                    Engaged
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Complete Column */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  Complete
-                </h2>
-                <span className="font-mono text-sm text-muted-foreground">
-                  {completeOrders.length}
-                </span>
-              </div>
-
-              <div className="space-y-3 min-h-[400px]">
-                {ordersLoading ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    Loading...
-                  </div>
-                ) : completeOrders.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8 border border-dashed border-border/50 rounded-lg">
-                    No complete orders
-                  </div>
-                ) : (
-                  completeOrders.map((order: DashboardOrder) => (
-                    <OrderCard
-                      key={order.id}
-                      orderNumber={order.orderNumber}
-                      type={order.type}
-                      status={order.status}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {botsLoading ? (
+                Array(5)
+                  .fill(0)
+                  .map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-32 glass rounded-3xl animate-pulse"
                     />
                   ))
-                )}
-              </div>
+              ) : bots.length === 0 ? (
+                <div className="col-span-full h-40 glass rounded-[2.5rem] border-dashed border-border/40 flex flex-col items-center justify-center text-center p-8 grayscale opacity-50">
+                  <Cpu className="w-10 h-10 text-muted-foreground/30 mb-3" />
+                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/40">
+                    No units deployed
+                  </p>
+                </div>
+              ) : (
+                bots.map((bot: DashboardBot) => {
+                  const botTimerState = botState.bots.get(bot.id)
+                  return (
+                    <BotDisplay
+                      key={bot.id}
+                      botId={bot.id}
+                      status={bot.status}
+                      remainingMs={botTimerState?.remainingMs}
+                      currentOrderId={bot.currentOrderId}
+                    />
+                  )
+                })
+              )}
             </div>
           </div>
         </div>

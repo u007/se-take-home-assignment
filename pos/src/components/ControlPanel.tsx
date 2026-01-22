@@ -1,6 +1,8 @@
 import { Button } from './ui/button'
-import { Plus, Minus, Star } from 'lucide-react'
+import { Plus, Minus, Star, Cpu, ListChecks } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
+import { cn } from '@/lib/utils'
+import { Separator } from './ui/separator'
 
 interface ControlPanelProps {
   onCreateNormalOrder: () => void
@@ -26,25 +28,24 @@ export function ControlPanel({
   const canManageBots = user?.role === 'MANAGER'
 
   return (
-    <div className="border-t bg-card/50 backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          {/* Order Controls */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Orders
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-fit px-6">
+      <div className="glass shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-8 ring-1 ring-white/10">
+        {/* Order Controls */}
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">
+              Operations
             </span>
-
             <div className="flex items-center gap-2">
               <Button
                 onClick={onCreateNormalOrder}
                 disabled={isCreating}
                 variant="default"
-                size="lg"
-                className="gap-2 font-semibold"
+                size="sm"
+                className="h-10 px-4 rounded-xl gap-2 font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
               >
                 <Plus className="w-4 h-4" />
-                Normal Order
+                Normal
               </Button>
 
               {canCreateVIP && (
@@ -52,36 +53,37 @@ export function ControlPanel({
                   onClick={onCreateVIPOrder}
                   disabled={isCreating}
                   variant="outline"
-                  size="lg"
-                  className="gap-2 font-semibold border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+                  size="sm"
+                  className="h-10 px-4 rounded-xl gap-2 font-bold border-amber-500/30 text-amber-500 bg-amber-500/5 transition-all hover:bg-amber-500/10 hover:scale-105 active:scale-95"
                 >
-                  <Star className="w-4 h-4 fill-yellow-400" />
+                  <Star className="w-4 h-4 fill-amber-500" />
                   VIP Order
                 </Button>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Bot Controls */}
-          {canManageBots && (
-            <>
-              <div className="h-8 w-px bg-border" />
+        {canManageBots && (
+          <>
+            <Separator orientation="vertical" className="h-10 bg-white/10" />
 
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                  Bots ({botCount})
+            {/* Bot Controls */}
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">
+                  Fleet ({botCount})
                 </span>
-
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={onAddBot}
                     disabled={isCreating}
                     variant="secondary"
-                    size="lg"
-                    className="gap-2"
+                    size="sm"
+                    className="h-10 px-4 rounded-xl gap-2 font-bold bg-white/5 border border-white/10 transition-all hover:bg-white/10 hover:scale-105 active:scale-95"
                   >
-                    <Plus className="w-4 h-4" />
-                    Add Bot
+                    <Plus className="w-4 h-4 text-blue-400" />
+                    Deploy Bot
                   </Button>
 
                   {botCount > 0 && (
@@ -89,18 +91,17 @@ export function ControlPanel({
                       onClick={onRemoveBot}
                       disabled={isCreating}
                       variant="outline"
-                      size="lg"
-                      className="gap-2 text-destructive border-destructive/50 hover:bg-destructive/10"
+                      size="sm"
+                      className="h-10 w-10 p-0 rounded-xl border-destructive/20 text-destructive bg-destructive/5 transition-all hover:bg-destructive/10 hover:scale-105 active:scale-95"
                     >
                       <Minus className="w-4 h-4" />
-                      Remove Bot
                     </Button>
                   )}
                 </div>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
