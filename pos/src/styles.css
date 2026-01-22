@@ -231,7 +231,7 @@ code, .font-mono {
 
 ::-webkit-scrollbar-thumb {
   background: theme('colors.muted-foreground');
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {

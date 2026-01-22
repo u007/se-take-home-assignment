@@ -18,7 +18,7 @@ function RouteComponent() {
 
   return (
     <div className="relative min-h-[100vh] flex items-center bg-black text-white p-5">
-      <div className="relative z-10 w-[60%] bg-gray-900/60 backdrop-blur-md rounded-2xl p-8 border border-gray-800/50 shadow-xl">
+      <div className="relative z-10 w-[60%] bg-gray-900/60 backdrop-blur-md rounded-md p-8 border border-gray-800/50 shadow-xl">
         <Link
           to="/example/guitars"
           className="inline-block mb-4 text-emerald-400 hover:text-emerald-300"
@@ -31,14 +31,14 @@ function RouteComponent() {
           <div className="text-2xl font-bold text-emerald-400">
             ${guitar.price}
           </div>
-          <button className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg transition-colors">
+          <button className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-sm transition-colors">
             Add to Cart
           </button>
         </div>
       </div>
 
       <div className="absolute top-0 right-0 w-[55%] h-full z-0">
-        <div className="w-full h-full overflow-hidden rounded-2xl border-4 border-gray-800 shadow-2xl">
+        <div className="w-full h-full overflow-hidden rounded-md border-4 border-gray-800 shadow-2xl">
           <img
             src={guitar.image}
             alt={guitar.name}

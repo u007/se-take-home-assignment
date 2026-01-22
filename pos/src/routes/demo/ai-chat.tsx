@@ -102,11 +102,11 @@ function Messages({
             >
               <div className="flex items-start gap-4 max-w-3xl mx-auto w-full">
                 {message.role === 'assistant' ? (
-                  <div className="w-8 h-8 rounded-lg bg-linear-to-r from-orange-500 to-red-600 mt-2 flex items-center justify-center text-sm font-medium text-white flex-shrink-0">
+                  <div className="w-8 h-8 rounded-sm bg-linear-to-r from-orange-500 to-red-600 mt-2 flex items-center justify-center text-sm font-medium text-white flex-shrink-0">
                     AI
                   </div>
                 ) : (
-                  <div className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center text-sm font-medium text-white flex-shrink-0">
+                  <div className="w-8 h-8 rounded-sm bg-gray-700 flex items-center justify-center text-sm font-medium text-white flex-shrink-0">
                     Y
                   </div>
                 )}
@@ -201,7 +201,7 @@ function ChatPage() {
               <div className="flex items-center justify-center">
                 <button
                   onClick={stop}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-sm text-sm font-medium transition-colors flex items-center gap-2"
                 >
                   <Square className="w-4 h-4 fill-current" />
                   Stop
@@ -222,7 +222,7 @@ function ChatPage() {
                   type="button"
                   onClick={handleMicClick}
                   disabled={isLoading || isTranscribing}
-                  className={`p-3 rounded-lg transition-colors ${
+                  className={`p-3 rounded-sm transition-colors ${
                     isRecording
                       ? 'bg-red-600 hover:bg-red-700 text-white'
                       : 'bg-gray-800/50 text-gray-400 hover:text-orange-400 border border-orange-500/20'
@@ -243,7 +243,7 @@ function ChatPage() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="Type something clever..."
-                    className="w-full rounded-lg border border-orange-500/20 bg-gray-800/50 pl-4 pr-12 py-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-transparent resize-none overflow-hidden shadow-lg"
+                    className="w-full rounded-sm border border-orange-500/20 bg-gray-800/50 pl-4 pr-12 py-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-transparent resize-none overflow-hidden shadow-lg"
                     rows={1}
                     style={{ minHeight: '44px', maxHeight: '200px' }}
                     disabled={isLoading}

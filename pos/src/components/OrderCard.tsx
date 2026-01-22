@@ -54,38 +54,35 @@ export function OrderCard({
       )}
     >
       {isVIP && (
-        <div className="absolute -right-6 -top-6 w-16 h-16 bg-amber-500/10 blur-2xl rounded-full transition-all group-hover:bg-amber-500/20" />
+        <div className="absolute -right-6 -top-6 w-16 h-16 bg-amber-500/10 blur-2xl rounded-md transition-all group-hover:bg-amber-500/20" />
       )}
 
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
-                Order Reference
-              </span>
-              <div
-                className={cn(
-                  'font-mono text-2xl font-black tracking-tighter',
-                  isVIP ? 'text-amber-500' : 'text-foreground',
-                )}
-              >
-                #{String(orderNumber).padStart(3, '0')}
-              </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+              Order Reference
+            </span>
+            <div
+              className={cn(
+                'font-mono text-2xl font-black tracking-tighter',
+                isVIP ? 'text-amber-500' : 'text-foreground',
+              )}
+            >
+              #{String(orderNumber).padStart(3, '0')}
             </div>
-
-            {isVIP && (
-              <Badge
-                variant="outline"
-                className="mt-4 bg-amber-500/10 text-amber-500 border-amber-500/20 px-1.5 py-0 text-[10px] font-black uppercase tracking-tighter"
-              >
-                <Star className="w-3 h-3 mr-1 fill-amber-500" />
-                VIP Priority
-              </Badge>
-            )}
           </div>
 
           <div className="flex flex-col items-end gap-1.5">
+            {isVIP && (
+              <Badge
+                variant="outline"
+                className="bg-amber-500/10 text-amber-500 border-amber-500/20 px-1.5 py-0 text-[10px] font-black uppercase tracking-tighter"
+              >
+                <Star className="w-3 h-3 mr-1 fill-amber-500" />
+                VIP
+              </Badge>
+            )}
             <Badge
               variant="outline"
               className={cn(
@@ -95,7 +92,7 @@ export function OrderCard({
             >
               <div
                 className={cn(
-                  'w-1.5 h-1.5 rounded-full',
+                  'w-1.5 h-1.5 rounded-sm',
                   config.dot,
                   config.spin && 'animate-pulse',
                 )}

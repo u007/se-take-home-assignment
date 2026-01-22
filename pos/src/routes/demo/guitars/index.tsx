@@ -23,7 +23,7 @@ function GuitarsIndex() {
               }}
             >
               <div className="relative z-0 w-full aspect-square mb-8">
-                <div className="w-full h-full overflow-hidden rounded-2xl border-4 border-gray-800 shadow-2xl">
+                <div className="w-full h-full overflow-hidden rounded-md border-4 border-gray-800 shadow-2xl">
                   <img
                     src={guitar.image}
                     alt={guitar.name}
@@ -37,7 +37,7 @@ function GuitarsIndex() {
                 </div>
               </div>
 
-              <div className="absolute bottom-0 right-0 z-10 w-[80%] bg-gray-900/60 backdrop-blur-md rounded-2xl p-5 border border-gray-800/50 shadow-xl transform translate-y-[40%]">
+              <div className="absolute bottom-0 right-0 z-10 w-[80%] bg-gray-900/60 backdrop-blur-md rounded-md p-5 border border-gray-800/50 shadow-xl transform translate-y-[40%]">
                 <h2 className="text-xl font-bold mb-2">{guitar.name}</h2>
                 <p className="text-gray-300 mb-3 line-clamp-2">
                   {guitar.shortDescription}

@@ -39,7 +39,7 @@ export function BotDisplay({
           <div className="flex items-center gap-2.5">
             <div
               className={cn(
-                'p-1.5 rounded-lg border transition-colors',
+                'p-1.5 rounded-sm border transition-colors',
                 isProcessing
                   ? 'bg-blue-500/10 border-blue-500/30 text-blue-500'
                   : 'bg-muted border-border text-muted-foreground',
@@ -77,12 +77,12 @@ export function BotDisplay({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <div className="w-1 h-1 rounded-full bg-blue-500 animate-ping" />
+                <div className="w-1 h-1 rounded-sm bg-blue-500 animate-ping" />
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   Active Task
                 </span>
               </div>
-              <span className="font-mono text-[10px] font-black text-blue-500 bg-blue-500/10 px-1.5 rounded border border-blue-500/20">
+              <span className="font-mono text-[10px] font-black text-blue-500 bg-blue-500/10 px-1.5 rounded-sm border border-blue-500/20">
                 ORDER #{String(currentOrderId).padStart(3, '0')}
               </span>
             </div>
@@ -108,8 +108,8 @@ export function BotDisplay({
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center gap-2 py-4 border border-dashed border-border/50 rounded-lg bg-muted/20">
-            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+          <div className="flex items-center justify-center gap-2 py-4 border border-dashed border-border/50 rounded-sm bg-muted/20">
+            <div className="w-1.5 h-1.5 rounded-sm bg-muted-foreground/30" />
             <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.15em]">
               Standby Mode
             </span>

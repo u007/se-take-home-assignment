@@ -92,7 +92,7 @@ function ImagePage() {
                   value={size}
                   onChange={(e) => setSize(e.target.value)}
                   disabled={isLoading}
-                  className="w-full rounded-lg border border-orange-500/20 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                  className="w-full rounded-sm border border-orange-500/20 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
                 >
                   {SIZES.map((s) => (
                     <option key={s} value={s}>
@@ -116,7 +116,7 @@ function ImagePage() {
                   min={1}
                   max={4}
                   disabled={isLoading}
-                  className="w-full rounded-lg border border-orange-500/20 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                  className="w-full rounded-sm border border-orange-500/20 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
                 />
               </div>
             </div>
@@ -130,7 +130,7 @@ function ImagePage() {
                 onChange={(e) => setPrompt(e.target.value)}
                 disabled={isLoading}
                 rows={6}
-                className="w-full rounded-lg border border-orange-500/20 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none"
+                className="w-full rounded-sm border border-orange-500/20 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none"
                 placeholder="Describe the image you want to generate..."
               />
             </div>
@@ -138,7 +138,7 @@ function ImagePage() {
             <button
               onClick={handleGenerate}
               disabled={isLoading || !prompt.trim()}
-              className="w-full px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              className="w-full px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white rounded-sm font-medium transition-colors flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -152,13 +152,13 @@ function ImagePage() {
           </div>
 
           {/* Output Panel */}
-          <div className="lg:col-span-2 bg-gray-800 rounded-lg p-6 border border-orange-500/20">
+          <div className="lg:col-span-2 bg-gray-800 rounded-sm p-6 border border-orange-500/20">
             <h2 className="text-lg font-semibold text-white mb-4">
               Generated Images
             </h2>
 
             {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 mb-4">
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-sm text-red-400 mb-4">
                 {error}
               </div>
             )}
@@ -171,11 +171,11 @@ function ImagePage() {
                       <img
                         src={getImageSrc(image)}
                         alt={`Generated image ${index + 1}`}
-                        className="w-full rounded-lg border border-gray-700"
+                        className="w-full rounded-sm border border-gray-700"
                       />
                       <button
                         onClick={() => handleDownload(image, index)}
-                        className="absolute top-2 right-2 p-2 bg-gray-900/80 hover:bg-gray-900 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-2 right-2 p-2 bg-gray-900/80 hover:bg-gray-900 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity"
                         title="Download image"
                       >
                         <Download className="w-4 h-4 text-white" />

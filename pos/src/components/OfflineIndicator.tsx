@@ -28,8 +28,8 @@ export function OfflineIndicator() {
     <div className="fixed top-20 right-8 z-50 flex flex-col items-end gap-3 pointer-events-none">
       {/* Offline Status */}
       {!syncState.isOnline && (
-        <div className="glass shadow-2xl rounded-2xl px-4 py-2 flex items-center gap-3 border-destructive/20 bg-destructive/5 animate-slide-in-right">
-          <div className="p-1.5 rounded-lg bg-destructive/10">
+        <div className="glass shadow-2xl rounded-md px-4 py-2 flex items-center gap-3 border-destructive/20 bg-destructive/5 animate-slide-in-right">
+          <div className="p-1.5 rounded-sm bg-destructive/10">
             <WifiOff className="w-3.5 h-3.5 text-destructive" />
           </div>
           <div className="flex flex-col">
@@ -48,7 +48,7 @@ export function OfflineIndicator() {
         syncState.isOnline && (
           <div
             className={cn(
-              'glass shadow-2xl rounded-2xl px-4 py-2 flex items-center gap-3 animate-slide-in-right transition-all duration-500',
+              'glass shadow-2xl rounded-md px-4 py-2 flex items-center gap-3 animate-slide-in-right transition-all duration-500',
               syncState.isSyncing
                 ? 'border-blue-500/20 bg-blue-500/5'
                 : 'border-emerald-500/20 bg-emerald-500/5',
@@ -56,7 +56,7 @@ export function OfflineIndicator() {
           >
             <div
               className={cn(
-                'p-1.5 rounded-lg',
+                'p-1.5 rounded-sm',
                 syncState.isSyncing
                   ? 'bg-blue-500/10 text-blue-500'
                   : 'bg-emerald-500/10 text-emerald-500',

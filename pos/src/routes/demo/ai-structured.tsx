@@ -210,7 +210,7 @@ function StructuredPage() {
               onChange={(e) => setRecipeName(e.target.value)}
               disabled={isLoading}
               placeholder="e.g., Chocolate Chip Cookies"
-              className="w-full rounded-lg border border-orange-500/20 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+              className="w-full rounded-sm border border-orange-500/20 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
             />
 
             <div className="mt-2">
@@ -223,7 +223,7 @@ function StructuredPage() {
                     key={name}
                     onClick={() => setRecipeName(name)}
                     disabled={isLoading}
-                    className="px-2 py-1 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700 transition-colors"
+                    className="px-2 py-1 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-sm border border-gray-700 transition-colors"
                   >
                     {name}
                   </button>
@@ -237,7 +237,7 @@ function StructuredPage() {
               <button
                 onClick={() => handleGenerate('oneshot')}
                 disabled={!canExecute}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors text-white ${
+                className={`px-4 py-2 rounded-sm text-sm font-medium transition-colors text-white ${
                   !canExecute ? 'bg-gray-600' : 'bg-orange-500'
                 }`}
               >
@@ -246,7 +246,7 @@ function StructuredPage() {
               <button
                 onClick={() => handleGenerate('structured')}
                 disabled={!canExecute}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors  text-white ${
+                className={`px-4 py-2 rounded-sm text-sm font-medium transition-colors  text-white ${
                   !canExecute ? 'bg-gray-600' : 'bg-blue-500'
                 }`}
               >
@@ -257,7 +257,7 @@ function StructuredPage() {
         </div>
 
         {/* Output Panel */}
-        <div className="mt-5 lg:col-span-2 bg-gray-800 rounded-lg p-6 border border-orange-500/20">
+        <div className="mt-5 lg:col-span-2 bg-gray-800 rounded-sm p-6 border border-orange-500/20">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">
               Generated Recipe
@@ -276,7 +276,7 @@ function StructuredPage() {
           </div>
 
           {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 mb-4">
+            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-sm text-red-400 mb-4">
               {error}
             </div>
           )}

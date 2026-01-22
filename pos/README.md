@@ -44,7 +44,6 @@ pnpm tsx scripts/seed-db.ts
 
 This creates:
 - 3 demo users: `normal_user`, `vip_user`, `manager` (password: `password123`)
-- 2 initial bots
 
 ### Development
 

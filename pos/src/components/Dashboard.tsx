@@ -15,6 +15,8 @@ import {
   Bell,
   ChevronRight,
   Activity,
+  Cpu,
+  ListChecks,
 } from 'lucide-react'
 import { Button } from './ui/button'
 import { useQuery } from '@tanstack/react-query'
@@ -268,7 +270,7 @@ export function Dashboard() {
         <div className="max-w-[1600px] mx-auto px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2.5 group cursor-default">
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:scale-110">
+              <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:scale-110">
                 <LayoutDashboard className="w-5 h-5 text-primary-foreground" />
               </div>
               <div className="flex flex-col">
@@ -287,7 +289,7 @@ export function Dashboard() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="rounded-lg h-9 text-xs font-bold uppercase tracking-wider text-primary bg-primary/5"
+                className="rounded-sm h-9 text-xs font-bold uppercase tracking-wider text-primary bg-primary/5"
               >
                 Overview
                 <div className="ml-2 w-1 h-1 rounded-full bg-primary" />
@@ -295,14 +297,14 @@ export function Dashboard() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="rounded-lg h-9 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-all hover:bg-muted/50"
+                className="rounded-sm h-9 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-all hover:bg-muted/50"
               >
                 Analytics
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="rounded-lg h-9 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-all hover:bg-muted/50"
+                className="rounded-sm h-9 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-all hover:bg-muted/50"
               >
                 Fleet Mgmt
               </Button>
@@ -310,18 +312,18 @@ export function Dashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="h-9 glass rounded-xl flex items-center gap-1 px-1">
+            <div className="h-9 glass rounded-md flex items-center gap-1 px-1">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+                className="h-7 w-7 rounded-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 <Bell className="w-4 h-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+                className="h-7 w-7 rounded-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 <Settings className="w-4 h-4" />
               </Button>
@@ -338,8 +340,8 @@ export function Dashboard() {
                   {authState.user?.role}
                 </span>
               </div>
-              <div className="w-9 h-9 rounded-xl glass flex items-center justify-center p-0.5 border-primary/20">
-                <div className="w-full h-full rounded-[10px] bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-primary-foreground font-black text-xs">
+              <div className="w-9 h-9 rounded-md glass flex items-center justify-center p-0.5 border-primary/20">
+                <div className="w-full h-full rounded-sm bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-primary-foreground font-black text-xs">
                   {authState.user?.username?.charAt(0).toUpperCase()}
                 </div>
               </div>
@@ -347,7 +349,7 @@ export function Dashboard() {
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
-                className="w-9 h-9 rounded-xl hover:bg-destructive/10 hover:text-destructive group"
+                className="w-9 h-9 rounded-md hover:bg-destructive/10 hover:text-destructive group"
               >
                 <LogOut className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </Button>
@@ -389,7 +391,7 @@ export function Dashboard() {
             ].map((stat, i) => (
               <div
                 key={i}
-                className="glass rounded-[2rem] p-6 flex items-center justify-between group transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/5"
+                className="glass rounded-md p-6 flex items-center justify-between group transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/5"
               >
                 <div className="flex flex-col">
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">
@@ -401,7 +403,7 @@ export function Dashboard() {
                 </div>
                 <div
                   className={cn(
-                    'w-12 h-12 rounded-2xl flex items-center justify-center bg-background/50 border border-border/50 transition-colors group-hover:bg-background',
+                    'w-12 h-12 rounded-md flex items-center justify-center bg-background/50 border border-border/50 transition-colors group-hover:bg-background',
                     stat.color,
                   )}
                 >
@@ -456,7 +458,7 @@ export function Dashboard() {
                       {col.title}
                     </h2>
                   </div>
-                  <div className="px-2 py-0.5 rounded-full bg-background/50 border border-border/50">
+                  <div className="px-2 py-0.5 rounded-sm bg-background/50 border border-border/50">
                     <span className="font-mono text-[10px] font-bold text-muted-foreground">
                       {col.orders.length}
                     </span>
@@ -470,12 +472,12 @@ export function Dashboard() {
                       .map((_, i) => (
                         <div
                           key={i}
-                          className="h-24 glass rounded-3xl animate-pulse"
+                          className="h-24 glass rounded-md animate-pulse"
                         />
                       ))
                   ) : col.orders.length === 0 ? (
-                    <div className="flex-1 glass rounded-[2.5rem] border-dashed border-border/40 flex flex-col items-center justify-center text-center p-8 grayscale opacity-50">
-                      <div className="w-16 h-16 rounded-3xl bg-muted/20 flex items-center justify-center mb-4">
+                    <div className="flex-1 glass rounded-lg border-dashed border-border/40 flex flex-col items-center justify-center text-center p-8 grayscale opacity-50">
+                      <div className="w-16 h-16 rounded-md bg-muted/20 flex items-center justify-center mb-4">
                         <Activity className="w-8 h-8 text-muted-foreground/30" />
                       </div>
                       <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/40">
@@ -507,16 +509,16 @@ export function Dashboard() {
                   Neural Fleet Status
                 </h3>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                  <div className="w-2 h-2 rounded-sm bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.1em]">
                     Quantum Network Synchronized
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 glass px-3 py-1.5 rounded-2xl">
+              <div className="flex items-center gap-2 glass px-3 py-1.5 rounded-md">
                 <div className="flex items-center gap-1.5 px-3 border-r border-border/40">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="w-1.5 h-1.5 rounded-sm bg-emerald-500" />
                   <span className="text-[10px] font-black uppercase text-muted-foreground">
                     {
                       bots.filter((b: DashboardBot) => b.status === 'IDLE')
@@ -526,7 +528,7 @@ export function Dashboard() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 px-3">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-sm bg-blue-500 animate-pulse" />
                   <span className="text-[10px] font-black uppercase text-blue-500">
                     {
                       bots.filter(
@@ -546,11 +548,11 @@ export function Dashboard() {
                   .map((_, i) => (
                     <div
                       key={i}
-                      className="h-32 glass rounded-3xl animate-pulse"
+                      className="h-32 glass rounded-md animate-pulse"
                     />
                   ))
               ) : bots.length === 0 ? (
-                <div className="col-span-full h-40 glass rounded-[2.5rem] border-dashed border-border/40 flex flex-col items-center justify-center text-center p-8 grayscale opacity-50">
+                <div className="col-span-full h-40 glass rounded-lg border-dashed border-border/40 flex flex-col items-center justify-center text-center p-8 grayscale opacity-50">
                   <Cpu className="w-10 h-10 text-muted-foreground/30 mb-3" />
                   <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/40">
                     No units deployed

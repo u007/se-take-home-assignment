@@ -74,7 +74,7 @@ export function LoginForm() {
       <div className="w-full max-w-md space-y-8">
         {/* Logo/Brand */}
         <div className="text-center space-y-4">
-          <div className="inline-flex w-16 h-16 rounded-2xl bg-primary items-center justify-center shadow-2xl shadow-primary/30 mb-2">
+          <div className="inline-flex w-16 h-16 rounded-md bg-primary items-center justify-center shadow-2xl shadow-primary/30 mb-2">
             <LayoutDashboard className="w-8 h-8 text-primary-foreground" />
           </div>
           <div className="space-y-1">
@@ -88,7 +88,7 @@ export function LoginForm() {
         </div>
 
         {/* Login Card */}
-        <Card className="glass border-white/10 shadow-2xl rounded-[2.5rem] overflow-hidden">
+        <Card className="glass border-white/10 shadow-2xl rounded-lg overflow-hidden">
           <CardHeader className="pt-8 px-8 pb-4">
             <CardTitle className="text-2xl font-black tracking-tight">
               System Access
@@ -117,7 +117,7 @@ export function LoginForm() {
                       setFormData({ ...formData, username: e.target.value })
                     }
                     placeholder="Identifier"
-                    className="h-12 pl-11 rounded-2xl border-white/5 bg-background/50 backdrop-blur-sm focus:ring-primary/20 transition-all font-mono font-bold"
+                    className="h-12 pl-11 rounded-md border-white/5 bg-background/50 backdrop-blur-sm focus:ring-primary/20 transition-all font-mono font-bold"
                     required
                   />
                 </div>
@@ -141,7 +141,7 @@ export function LoginForm() {
                       setFormData({ ...formData, password: e.target.value })
                     }
                     placeholder="••••••••"
-                    className="h-12 pl-11 rounded-2xl border-white/5 bg-background/50 backdrop-blur-sm focus:ring-primary/20 transition-all font-mono font-bold"
+                    className="h-12 pl-11 rounded-md border-white/5 bg-background/50 backdrop-blur-sm focus:ring-primary/20 transition-all font-mono font-bold"
                     required
                   />
                 </div>
@@ -149,7 +149,7 @@ export function LoginForm() {
 
               {/* Error */}
               {error && (
-                <div className="p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-shake">
+                <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-[10px] font-black uppercase tracking-widest flex items-center gap-2 animate-shake">
                   <ShieldCheck className="w-4 h-4" />
                   {error}
                 </div>
@@ -158,7 +158,7 @@ export function LoginForm() {
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full h-12 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full h-12 rounded-md font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 size="lg"
                 disabled={isLoading}
               >
@@ -186,7 +186,7 @@ export function LoginForm() {
                     onClick={() =>
                       fillCredentials(cred.username, cred.password)
                     }
-                    className="flex items-center justify-between p-3.5 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-primary/30 transition-all text-left group"
+                    className="flex items-center justify-between p-3.5 rounded-md border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-primary/30 transition-all text-left group"
                   >
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black uppercase tracking-widest text-primary/80 group-hover:text-primary transition-colors">
@@ -196,7 +196,7 @@ export function LoginForm() {
                         {cred.username}
                       </span>
                     </div>
-                    <div className="w-8 h-8 rounded-xl bg-background/50 flex items-center justify-center opacity-40 group-hover:opacity-100 transition-all group-hover:bg-primary/20">
+                    <div className="w-8 h-8 rounded-sm bg-background/50 flex items-center justify-center opacity-40 group-hover:opacity-100 transition-all group-hover:bg-primary/20">
                       <ShieldCheck className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
                     </div>
                   </button>

@@ -142,12 +142,12 @@ function TableDemo() {
         <DebouncedInput
           value={globalFilter}
           onChange={(value) => setGlobalFilter(String(value))}
-          className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          className="w-full p-3 bg-gray-800 text-white rounded-sm border border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
           placeholder="Search all columns..."
         />
       </div>
       <div className="h-4" />
-      <div className="overflow-x-auto rounded-lg border border-gray-700">
+      <div className="overflow-x-auto rounded-sm border border-gray-700">
         <table className="w-full text-sm text-gray-200">
           <thead className="bg-gray-800 text-gray-100">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -294,7 +294,7 @@ function TableDemo() {
           Refresh Data
         </button>
       </div>
-      <pre className="mt-4 p-4 bg-gray-800 rounded-lg text-gray-300 overflow-auto">
+      <pre className="mt-4 p-4 bg-gray-800 rounded-sm text-gray-300 overflow-auto">
         {JSON.stringify(
           {
             columnFilters: table.getState().columnFilters,
