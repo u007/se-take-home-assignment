@@ -32,6 +32,9 @@ export const Route = createFileRoute('/api/orders/$id')({
             return Response.json({ error: 'Order not found' }, { status: 404 })
           }
 
+          const now = new Date()
+          const nowMs = now.getTime()
+
           const shouldScheduleCompletion =
             body.status === 'PROCESSING' &&
             body.botId !== undefined &&
@@ -63,18 +66,19 @@ export const Route = createFileRoute('/api/orders/$id')({
               url: callbackUrl,
               body: { orderId: params.id, botId: body.botId },
               delay: BOT_PROCESSING_DELAY_SECONDS,
+              deduplicationId: `${params.id}:${nowMs}`,
             })
           }
 
           // Build update object
           const updates: Record<string, any> = {
-            updatedAt: new Date(),
+            updatedAt: now,
           }
 
           if (body.status !== undefined) {
             updates.status = body.status
             if (body.status === 'COMPLETE') {
-              updates.completedAt = new Date()
+              updates.completedAt = now
             }
           }
 

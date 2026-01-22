@@ -325,52 +325,6 @@ export function Dashboard() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto pb-32">
         <div className="max-w-[1600px] mx-auto px-8 py-10">
-          {/* Dashboard Summary Hooks */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-            {[
-              {
-                label: 'Active Bots',
-                value: bots.length,
-                icon: Cpu,
-                color: 'text-blue-500',
-              },
-              {
-                label: 'Total Throughput',
-                value: completeOrders.length,
-                icon: ListChecks,
-                color: 'text-primary',
-              },
-              {
-                label: 'Avg Process Time',
-                value: '10.0s',
-                icon: Activity,
-                color: 'text-amber-500',
-              },
-            ].map((stat, i) => (
-              <div
-                key={i}
-                className="glass rounded-md p-6 flex items-center justify-between group transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/5"
-              >
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">
-                    {stat.label}
-                  </span>
-                  <span className="text-2xl font-black tracking-tighter">
-                    {stat.value}
-                  </span>
-                </div>
-                <div
-                  className={cn(
-                    'w-12 h-12 rounded-md flex items-center justify-center bg-background/50 border border-border/50 transition-colors group-hover:bg-background',
-                    stat.color,
-                  )}
-                >
-                  <stat.icon className="w-6 h-6" />
-                </div>
-              </div>
-            ))}
-          </div>
-
           {/* Three Column Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Column Factory */}
@@ -516,7 +470,9 @@ export function Dashboard() {
               ) : (
                 bots.map((bot: DashboardBot) => {
                   const currentOrder = bot.currentOrderId
-                    ? orders.find((o: DashboardOrder) => o.id === bot.currentOrderId)
+                    ? orders.find(
+                        (o: DashboardOrder) => o.id === bot.currentOrderId,
+                      )
                     : null
                   return (
                     <BotDisplay

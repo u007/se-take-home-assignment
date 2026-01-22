@@ -1,8 +1,77 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { Client } from '@upstash/qstash'
 import { getDb } from '@/db'
-import { orders } from '@/db/schema'
-import { isNull, desc, sql } from 'drizzle-orm'
+import { orders, bots } from '@/db/schema'
+import { and, eq, isNull, desc, sql } from 'drizzle-orm'
 import { uuidv7 } from '@/lib/uuid7'
+
+const BOT_PROCESSING_DELAY_SECONDS = 10
+
+const getUpdatedAtMs = (value: unknown) => {
+  if (value instanceof Date) return value.getTime()
+  return new Date(value as string | number).getTime()
+}
+
+const resumeProcessingOrders = async () => {
+  const db = getDb()
+  const processingOrders = await db
+    .select()
+    .from(orders)
+    .where(and(eq(orders.status, 'PROCESSING'), isNull(orders.deletedAt)))
+
+  if (processingOrders.length === 0) return
+
+  const nowMs = Date.now()
+  const baseUrl = process.env.APP_BASE_URL
+  const token = process.env.QSTASH_TOKEN
+  const client = baseUrl && token ? new Client({ token }) : null
+  const callbackUrl = baseUrl
+    ? new URL('/api/orders/complete', baseUrl).toString()
+    : null
+
+  for (const order of processingOrders) {
+    if (!order.botId) continue
+
+    const updatedAtMs = getUpdatedAtMs(order.updatedAt)
+    const elapsedMs = nowMs - updatedAtMs
+
+    if (elapsedMs >= BOT_PROCESSING_DELAY_SECONDS * 1000) {
+      const now = new Date(nowMs)
+      await db
+        .update(orders)
+        .set({
+          status: 'COMPLETE',
+          completedAt: now,
+          updatedAt: now,
+        })
+        .where(and(eq(orders.id, order.id), isNull(orders.deletedAt)))
+
+      await db
+        .update(bots)
+        .set({
+          status: 'IDLE',
+          currentOrderId: null,
+          updatedAt: now,
+        })
+        .where(and(eq(bots.id, order.botId), isNull(bots.deletedAt)))
+      continue
+    }
+
+    if (client && callbackUrl) {
+      const remainingSeconds = Math.max(
+        1,
+        Math.ceil((BOT_PROCESSING_DELAY_SECONDS * 1000 - elapsedMs) / 1000),
+      )
+
+      await client.publishJSON({
+        url: callbackUrl,
+        body: { orderId: order.id, botId: order.botId },
+        delay: remainingSeconds,
+        deduplicationId: `${order.id}:${updatedAtMs}`,
+      })
+    }
+  }
+}
 
 interface CreateOrderRequest {
   type: 'NORMAL' | 'VIP'
@@ -16,6 +85,8 @@ export const Route = createFileRoute('/api/orders')({
     handlers: {
       GET: async () => {
         try {
+          await resumeProcessingOrders()
+
           const db = getDb()
           const allOrders = await db
             .select()

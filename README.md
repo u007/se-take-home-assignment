@@ -142,6 +142,7 @@ All requirements have been verified and tested. See `TEST.md` for detailed test 
 - **Soft Delete** with `deleted_at` timestamp
 - **Foreign Key Cascades**: User delete preserves orders, Bot delete unassigns orders
 - **Backend Bot Processing**: Order completion scheduled via Upstash QStash (10s delay)
+- **Processing Resume**: On startup requests, in-flight orders are resumed and completed/scheduled as needed
 
 ### Environment
 - `APP_BASE_URL` is required so QStash can call back into `/api/orders/complete` (use a public URL in dev, e.g. via ngrok).
