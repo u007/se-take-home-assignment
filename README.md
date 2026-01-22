@@ -119,6 +119,8 @@ pnpm dev
 ## Test Checklist/Results
 All requirements have been verified and tested. See `TEST.md` for detailed test results.
 
+![Sample Screenshot](sample.png)
+
 ### Key Requirements Verified
 - [x] Normal orders appear in PENDING area
 - [x] VIP orders queue before all Normal orders
