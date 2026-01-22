@@ -697,4 +697,4 @@ feedme-order-controller/
 
 10. **shadcn/ui Components**: Pre-built, accessible components that work with Tailwind CSS. Copy-paste approach, fully customizable.
 
-11. **Vercel Deployment**: TanStack Start is optimized for Vercel with edge functions. The `DATABASE_URL` and `DB_PASS` environment variables must be configured in Vercel dashboard.
+11. **Vercel Deployment**: TanStack Start is optimized for Vercel with edge functions. The `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` environment variables must be configured in Vercel dashboard.

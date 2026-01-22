@@ -189,8 +189,8 @@ The `pos/.env.local` file contains database credentials:
 
 The root `.env` file contains Turso database credentials (if migrating to Turso):
 
-- `DATABASE_URL` - Turso connection string
-- `DB_PASS` - Turso authentication token
+- `TURSO_DATABASE_URL` - Turso connection string
+- `TURSO_AUTH_TOKEN` - Turso authentication token
 
 ---
 

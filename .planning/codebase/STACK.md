@@ -62,8 +62,8 @@
 **Environment:**
 - `.env` file present with Turso credentials
 - Key configs:
-  - `DATABASE_URL` - Turso database connection string
-  - `DB_PASS` - Turso authentication token (JWT)
+  - `TURSO_DATABASE_URL` - Turso database connection string
+  - `TURSO_AUTH_TOKEN` - Turso authentication token (JWT)
 
 **Build:**
 - Build script: `scripts/build.sh` (placeholder)

@@ -53,7 +53,7 @@ se-take-home-assignment/
 - Not implemented (project in planning phase)
 
 **Configuration:**
-- `.env` - Turso database credentials (DATABASE_URL, DB_PASS)
+- `.env` - Turso database credentials (TURSO_DATABASE_URL, TURSO_AUTH_TOKEN)
 - `.gitignore` - Git ignore rules (only .env)
 
 **Documentation:**

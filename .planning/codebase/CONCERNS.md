@@ -34,7 +34,7 @@
 - Risk: Developers don't know what environment variables are required
 - File: Missing `.env.example`
 - Current mitigation: Documented in PLAN.md and INTEGRATIONS.md
-- Recommendations: Create `.env.example` with placeholder values showing required variables (DATABASE_URL, DB_PASS)
+- Recommendations: Create `.env.example` with placeholder values showing required variables (TURSO_DATABASE_URL, TURSO_AUTH_TOKEN)
 
 ## Performance Bottlenecks
 

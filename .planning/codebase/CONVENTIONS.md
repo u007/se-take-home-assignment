@@ -13,7 +13,7 @@
 - Not applicable (no implementation code)
 
 **Variables:**
-- Environment variables: UPPER_SNAKE_CASE (DATABASE_URL, DB_PASS)
+- Environment variables: UPPER_SNAKE_CASE (TURSO_DATABASE_URL, TURSO_AUTH_TOKEN)
 
 **Types:**
 - Not applicable (no TypeScript/Go code)

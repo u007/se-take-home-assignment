@@ -17,7 +17,7 @@
 
 **Databases:**
 - Turso (LibSQL) - Planned per `PLAN.md`
-  - Connection: via `DATABASE_URL` environment variable in `.env`
+  - Connection: via `TURSO_DATABASE_URL` environment variable in `.env`
   - Client: Planned - @libsql/client (not yet installed)
   - Migrations: Planned via Drizzle ORM
   - Schema location: `PLAN.md` (lines 113-169) contains full schema definition
@@ -75,7 +75,7 @@
 ## Environment Configuration
 
 **Development:**
-- Required env vars: DATABASE_URL, DB_PASS (Turso credentials)
+- Required env vars: TURSO_DATABASE_URL, TURSO_AUTH_TOKEN (Turso credentials)
 - Secrets location: `.env` (gitignored)
 - The `.env` file contains actual Turso credentials (JWT token and connection URL)
 
