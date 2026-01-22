@@ -8,42 +8,42 @@
 
 /* Custom properties for FeedMe Order Controller */
 :root {
-  /* Status Colors */
+  /* Status Colors (Light Mode) */
   --color-pending: oklch(0.65 0.15 85);
   --color-processing: oklch(0.55 0.18 250);
   --color-complete: oklch(0.55 0.15 145);
   --color-vip: oklch(0.60 0.18 85);
 
-  /* Background */
-  --background: oklch(0.15 0.01 285);
-  --foreground: oklch(0.98 0 0);
+  /* Background (Light Mode) */
+  --background: oklch(0.98 0 0);
+  --foreground: oklch(0.15 0.01 285);
 
-  /* Card */
-  --card: oklch(0.18 0.01 285);
-  --card-foreground: oklch(0.98 0 0);
+  /* Card (Light Mode) */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.01 285);
 
-  /* Border */
-  --border: oklch(0.25 0.01 285);
-  --input: oklch(0.25 0.01 285);
+  /* Border (Light Mode) */
+  --border: oklch(0.92 0.01 285);
+  --input: oklch(0.92 0.01 285);
 
-  /* Primary */
+  /* Primary (Light Mode) */
   --primary: oklch(0.55 0.15 250);
   --primary-foreground: oklch(0.98 0 0);
 
-  /* Secondary */
-  --secondary: oklch(0.25 0.01 285);
-  --secondary-foreground: oklch(0.98 0 0);
+  /* Secondary (Light Mode) */
+  --secondary: oklch(0.96 0.01 285);
+  --secondary-foreground: oklch(0.15 0.01 285);
 
-  /* Muted */
-  --muted: oklch(0.25 0.01 285);
-  --muted-foreground: oklch(0.65 0.01 285);
+  /* Muted (Light Mode) */
+  --muted: oklch(0.96 0.01 285);
+  --muted-foreground: oklch(0.45 0.01 285);
 
-  /* Accent */
-  --accent: oklch(0.35 0.02 285);
-  --accent-foreground: oklch(0.98 0 0);
+  /* Accent (Light Mode) */
+  --accent: oklch(0.92 0.02 285);
+  --accent-foreground: oklch(0.15 0.01 285);
 
-  /* Destructive */
-  --destructive: oklch(0.55 0.20 25);
+  /* Destructive (Light Mode) */
+  --destructive: oklch(0.60 0.20 25);
   --destructive-foreground: oklch(0.98 0 0);
 
   /* Ring */
@@ -51,6 +51,32 @@
 
   /* Radius */
   --radius: 0.5rem;
+}
+
+.dark {
+  /* Background (Dark Mode) */
+  --background: oklch(0.15 0.01 285);
+  --foreground: oklch(0.98 0 0);
+
+  /* Card (Dark Mode) */
+  --card: oklch(0.18 0.01 285);
+  --card-foreground: oklch(0.98 0 0);
+
+  /* Border (Dark Mode) */
+  --border: oklch(0.25 0.01 285);
+  --input: oklch(0.25 0.01 285);
+
+  /* Secondary (Dark Mode) */
+  --secondary: oklch(0.25 0.01 285);
+  --secondary-foreground: oklch(0.98 0 0);
+
+  /* Muted (Dark Mode) */
+  --muted: oklch(0.25 0.01 285);
+  --muted-foreground: oklch(0.65 0.01 285);
+
+  /* Accent (Dark Mode) */
+  --accent: oklch(0.35 0.02 285);
+  --accent-foreground: oklch(0.98 0 0);
 }
 
 body {
