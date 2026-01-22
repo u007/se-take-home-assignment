@@ -1,7 +1,5 @@
 # AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project Overview
 
 This is a **take-home assignment** for a FeedMe order controller system. The task is to implement a prototype that manages order queues with cooking bots. The assignment allows choosing either a **frontend** or **backend** implementation track.
@@ -11,6 +9,7 @@ This is a **take-home assignment** for a FeedMe order controller system. The tas
 ### Assignment Requirements
 
 **Core functionality:**
+
 - Orders flow through three states: PENDING → PROCESSING → COMPLETE
 - VIP orders queue before normal orders but behind existing VIP orders
 - Bots process orders (10 seconds per order)
@@ -56,8 +55,8 @@ feedme-order-controller/
 
 ### Workspace Packages
 
-| Package | Description | Tech Stack |
-|---------|-------------|------------|
+| Package       | Description         | Tech Stack                                             |
+| ------------- | ------------------- | ------------------------------------------------------ |
 | `@feedme/pos` | Frontend app (pos/) | TanStack Start, React 19, Tailwind v4, Drizzle, Zod v4 |
 
 ---
@@ -107,52 +106,62 @@ pnpm --filter pos dev           # Example: start pos dev server
 ### Frontend Stack (@feedme/pos)
 
 **Framework:**
+
 - TanStack Start 1.132+ (full-stack React framework with SSR)
 - React 19.2
 - Vite 7.1+
 - TypeScript 5.7+
 
 **Styling:**
+
 - Tailwind CSS 4.0+ (latest stable v4 with @tailwindcss/vite plugin)
 - shadcn/ui components (Radix UI primitives)
 - tw-animate-css for animations
 - class-variance-authority, clsx, tailwind-merge
 
 **State Management:**
+
 - @tanstack/react-query 5.66+ (server state)
 - @tanstack/react-store 0.8+ (client state)
 - @tanstack/react-form 1.0+ (form handling)
 - @tanstack/react-router 1.132+ (file-based routing with SSR query)
 
 **Validation:**
+
 - Zod 4.3.5+ (latest v4 for schema validation)
 
 **Database:**
+
 - Drizzle ORM 0.45+
 - better-sqlite3 12.5+ (local SQLite - can be migrated to Turso/LibSQL)
 - drizzle-kit 0.31.8+ (migrations and studio)
 
 **Authentication:**
+
 - better-auth 1.4.12+
 
 **AI Integration (TanStack AI):**
+
 - @tanstack/ai (latest) - AI SDK
 - @tanstack/ai-anthropic, ai-gemini, ai-ollama, ai-openai (providers)
 - @tanstack/ai-react (React bindings)
 - @tanstack/react-ai-devtools (DevTools)
 
 **Testing:**
+
 - Vitest 3.0.5+
 - @testing-library/react 16.2+
 - @testing-library/dom 10.4+
 
 **DevTools:**
+
 - @tanstack/react-devtools
 - @tanstack/react-query-devtools
 - @tanstack/react-router-devtools
 - @tanstack/devtools-vite
 
 **Other Utilities:**
+
 - lucide-react (icons)
 - @faker-js/faker (fake data generation)
 - highlight.js (syntax highlighting)
@@ -171,6 +180,7 @@ pnpm --filter pos dev           # Example: start pos dev server
 ### Frontend (pos/)
 
 The `pos/.env.local` file contains database credentials:
+
 - Database connection for Drizzle/better-sqlite3
 
 **Do not commit `.env.local`** - it is already in `.gitignore`.
@@ -178,6 +188,7 @@ The `pos/.env.local` file contains database credentials:
 ### Root (Backend CLI)
 
 The root `.env` file contains Turso database credentials (if migrating to Turso):
+
 - `DATABASE_URL` - Turso connection string
 - `DB_PASS` - Turso authentication token
 
@@ -221,6 +232,7 @@ bots (id, status, current_order_id, deleted_at)
 - All output written to `scripts/result.txt` with `HH:MM:SS` timestamps
 
 **Bot behavior:**
+
 - `+ Bot`: Create bot, immediately attempt to process next pending order
 - `- Bot`: Remove newest bot; if processing, return order to PENDING
 - After 10 seconds: Move order to COMPLETE, attempt next order
@@ -239,20 +251,18 @@ bots (id, status, current_order_id, deleted_at)
 
 ## Important Files
 
-| File | Purpose |
-|------|---------|
-| `README.md` | Assignment requirements and submission notes |
-| `PLAN.md` | Detailed implementation plan |
-| `TEST.md` | Manual test checklist |
-| `scripts/result.txt` | Sample output showing expected CLI format with timestamps |
-| `.planning/codebase/` | Generated codebase mapping documents |
-| `pnpm-workspace.yaml` | pnpm workspace configuration |
+| File                  | Purpose                                                   |
+| --------------------- | --------------------------------------------------------- |
+| `README.md`           | Assignment requirements and submission notes              |
+| `PLAN.md`             | Detailed implementation plan                              |
+| `TEST.md`             | Manual test checklist                                     |
+| `scripts/result.txt`  | Sample output showing expected CLI format with timestamps |
+| `.planning/codebase/` | Generated codebase mapping documents                      |
+| `pnpm-workspace.yaml` | pnpm workspace configuration                              |
 
 ---
 
 ## Implementation Guidance
-
-**Scope Note:** The README suggests completing this within ~30 minutes as a "vibe coding" exercise. The `PLAN.md` outlines an ambitious full-stack implementation with PWA, offline sync, and complex data patterns. Consider whether to follow the full plan or implement a simpler solution that meets core requirements.
 
 **For backend track:** Keep it simple - in-memory data structures, clear bot/order state machine, timestamp formatting is critical for CI validation.
 
@@ -343,7 +353,7 @@ bots (id, status, current_order_id, deleted_at)
 
 - **Never update .env files automatically** - ask user to update manually if needed
 - **Always update `.env.example`** for any new environment variable or configuration
-- **Never add guard environment variables** unless explicitly requested (e.g., GUARD_* variables)
+- **Never add guard environment variables** unless explicitly requested (e.g., GUARD\_\* variables)
 - **Use environment variables** for all configuration values
 - **Implement proper environment validation** with Zod schemas
 - **Document required environment variables** in project documentation

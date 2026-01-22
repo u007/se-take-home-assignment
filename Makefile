@@ -1,6 +1,5 @@
-.PHONEY test
+.PHONY: deploy dev
 
 dev:
-  cd pos && bun run dev
-
+	cd pos && bun run dev
 
