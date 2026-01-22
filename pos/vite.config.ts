@@ -15,6 +15,12 @@ const config = defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    allowedHosts: [
+      'feedme.mercstudio.com',
+      'localhost',
+    ]
+  },
   plugins: [
     devtools(),
     nitro(),
