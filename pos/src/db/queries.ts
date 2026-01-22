@@ -1,5 +1,5 @@
 import { getDb } from './index'
-import { users, orders, bots } from './schema'
+import { users, orders, bots, orderNumbers } from './schema'
 import { eq, and, isNull, desc, sql } from 'drizzle-orm'
 import type { User, Order, Bot, NewUser, NewOrder, NewBot } from './schema'
 
@@ -112,12 +112,14 @@ export async function getOrderById(id: string): Promise<Order | undefined> {
 export async function getNextOrderNumber(): Promise<number> {
   const db = getDb()
   const result = await db
-    .select({ orderNumber: orders.orderNumber })
-    .from(orders)
-    .where(isNull(orders.deletedAt))
-    .orderBy(desc(orders.orderNumber))
-    .limit(1)
-  return result[0]?.orderNumber ? result[0].orderNumber + 1 : 1
+    .insert(orderNumbers)
+    .values({})
+    .returning({ id: orderNumbers.id })
+  const orderNumber = result[0]?.id
+  if (!orderNumber) {
+    throw new Error('Failed to allocate order number')
+  }
+  return orderNumber
 }
 
 /**

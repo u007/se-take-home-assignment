@@ -3,7 +3,6 @@ import { useNavigate } from '@tanstack/react-router'
 import { useAuthStore } from '@/store/auth'
 import { OrderCard } from './OrderCard'
 import { BotDisplay } from './BotDisplay'
-import { ControlPanel } from './ControlPanel'
 import { OfflineIndicator } from './OfflineIndicator'
 import {
   LogOut,
@@ -13,10 +12,13 @@ import {
   ChevronUp,
   Bell,
   Settings,
+  Plus,
+  Minus,
+  Star,
+  Trash2,
 } from 'lucide-react'
 import mcdLogo from '../assets/mcd_logo.png'
-import { botProcessor } from '@/lib/bot-processor'
-import { botStore, botActions } from '@/store/bot'
+import { useMemo } from 'react'
 import { Button } from './ui/button'
 import { useQuery } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
@@ -29,6 +31,7 @@ interface DashboardOrder {
   status: 'PENDING' | 'PROCESSING' | 'COMPLETE'
   botId: string | null
   createdAt: string | number
+  processingStartedAt: string | number | null
   completedAt: string | number | null
 }
 
@@ -43,7 +46,8 @@ export function Dashboard() {
   const { state: authState, actions: authActions } = useAuthStore()
   const [isCreating, setIsCreating] = useState(false)
   const [botsCollapsed, setBotsCollapsed] = useState(true)
-  const assigningRef = useRef<Set<string>>(new Set()) // Track orders being assigned
+  const assigningRef = useRef<Set<string>>(new Set()) // Track bots being assigned
+  const [now, setNow] = useState(() => Date.now())
 
   // Fetch orders
   const {
@@ -86,9 +90,24 @@ export function Dashboard() {
   const processingOrders = orders.filter(
     (o: DashboardOrder) => o.status === 'PROCESSING',
   )
-  const completeOrders = orders.filter(
-    (o: DashboardOrder) => o.status === 'COMPLETE',
-  )
+  // Filter completed orders to hide those older than 30 minutes
+  const completeOrders = orders.filter((o: DashboardOrder) => {
+    if (o.status !== 'COMPLETE') return false
+    if (!o.completedAt) return true // Show if no completion time (shouldn't happen)
+
+    const completedAtMs = new Date(o.completedAt).getTime()
+    const thirtyMinutesMs = 30 * 60 * 1000
+    const isOlderThan30Minutes = now - completedAtMs > thirtyMinutesMs
+
+    return !isOlderThan30Minutes
+  })
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setNow(Date.now())
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   // Handle logout
   const handleLogout = () => {
@@ -170,113 +189,78 @@ export function Dashboard() {
     }
   }
 
+  // Clear all orders (manager only)
+  const clearOrders = async () => {
+    if (authState.user?.role !== 'MANAGER') return
+
+    setIsCreating(true)
+    try {
+      const response = await fetch('/api/orders/clear', {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) throw new Error('Failed to clear orders')
+
+      await refetchOrders()
+      await refetchBots()
+    } catch (error) {
+      console.error('Error clearing orders:', error)
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   // Auto-assign orders to idle bots
   useEffect(() => {
     const idleBots = bots.filter((b: DashboardBot) => b.status === 'IDLE')
-    // Filter out orders that are already being assigned
-    const unassignedOrders = pendingOrders.filter(
-      (o: DashboardOrder) => !assigningRef.current.has(o.id),
-    )
+    if (idleBots.length === 0 || pendingOrders.length === 0) return
 
-    if (idleBots.length > 0 && unassignedOrders.length > 0) {
-      const bot = idleBots[0]
-      const order = unassignedOrders[0]
-
-      // Mark this order as being assigned
-      assigningRef.current.add(order.id)
+    idleBots.forEach((bot: DashboardBot) => {
+      if (assigningRef.current.has(bot.id)) return
+      assigningRef.current.add(bot.id)
 
       const assignOrder = async () => {
         try {
-          const orderResponse = await fetch(`/api/orders/${order.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              status: 'PROCESSING',
-              botId: bot.id,
-            }),
+          const claimResponse = await fetch(`/api/bots/${bot.id}/claim`, {
+            method: 'POST',
           })
 
-          if (!orderResponse.ok) {
-            // If order is already being processed (409), just skip and refetch
-            if (orderResponse.status === 409) {
-              console.log(`Order ${order.id} already assigned, skipping`)
-              await refetchOrders()
-              await refetchBots()
-              return
+          if (!claimResponse.ok) {
+            if (claimResponse.status !== 409) {
+              const errorText = await claimResponse.text()
+              throw new Error(`Failed to claim order: ${errorText}`)
             }
-            const errorText = await orderResponse.text()
-            throw new Error(`Failed to update order: ${errorText}`)
           }
-
-          const botResponse = await fetch(`/api/bots/${bot.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              status: 'PROCESSING',
-              currentOrderId: order.id,
-            }),
-          })
-
-          if (!botResponse.ok) {
-            const errorText = await botResponse.text()
-            await fetch(`/api/orders/${order.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                status: 'PENDING',
-                botId: null,
-              }),
-            })
-            throw new Error(`Failed to update bot: ${errorText}`)
-          }
-
-          // Start the client-side processing timer
-          botProcessor.startOrderProcessing(bot.id, order.id)
 
           await refetchOrders()
           await refetchBots()
         } catch (error) {
           console.error('Error assigning order:', error)
         } finally {
-          // Remove from in-flight tracking
-          assigningRef.current.delete(order.id)
+          assigningRef.current.delete(bot.id)
         }
       }
 
       void assignOrder()
-    }
+    })
   }, [bots, pendingOrders, refetchOrders, refetchBots])
 
-  // Resume client-side timers for bots that are already processing
-  // This handles page reloads or tab switching where timers were lost
-  useEffect(() => {
-    // Only run when data is loaded
-    if (ordersLoading || botsLoading) return
-
-    const BOT_PROCESSING_TIME_MS = 10000 // 10 seconds
-
-    processingOrders.forEach((order: DashboardOrder) => {
-      if (order.botId) {
-        // Calculate remaining time based on order's updatedAt
-        const createdAtMs = new Date(order.createdAt).getTime()
-        const elapsedMs = Date.now() - createdAtMs
-        const remainingMs = Math.max(0, BOT_PROCESSING_TIME_MS - elapsedMs)
-
-        if (remainingMs > 0) {
-          // Resume timer with correct remaining time
-          botActions.setBotState(order.botId, {
-            status: 'PROCESSING',
-            currentOrderId: order.id,
-            remainingMs,
-            lastTick: Date.now(),
-          })
-        }
-        // If remainingMs is 0, the server-side callback should complete the order soon
-      }
+  const botProgress = useMemo(() => {
+    const progress = new Map<string, number>()
+    bots.forEach((bot: DashboardBot) => {
+      if (bot.status !== 'PROCESSING' || !bot.currentOrderId) return
+      const order = orders.find(
+        (o: DashboardOrder) => o.id === bot.currentOrderId,
+      )
+      if (!order?.processingStartedAt) return
+      const startedAtMs = new Date(order.processingStartedAt).getTime()
+      if (Number.isNaN(startedAtMs)) return
+      const elapsedMs = Math.max(0, now - startedAtMs)
+      const remainingMs = Math.max(0, 10000 - elapsedMs)
+      progress.set(bot.id, remainingMs)
     })
-    // Only run on mount and when loading completes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ordersLoading, botsLoading])
+    return progress
+  }, [bots, orders, now])
 
   return (
     <div className="min-h-screen bg-mesh flex flex-col selection:bg-primary/20">
@@ -397,7 +381,7 @@ export function Dashboard() {
                 empty: 'No Active Tasks',
               },
               {
-                title: 'Archived',
+                title: 'Done',
                 orders: completeOrders,
                 color: 'text-emerald-500',
                 dot: 'bg-emerald-500',
@@ -459,6 +443,7 @@ export function Dashboard() {
                           status={order.status}
                           botId={order.botId}
                           createdAt={order.createdAt}
+                          processingStartedAt={order.processingStartedAt}
                           completedAt={order.completedAt}
                         />
                       ))}
@@ -471,18 +456,123 @@ export function Dashboard() {
         </div>
       </main>
 
-      {/* Control Panel */}
-      <ControlPanel
-        onCreateOrder={(type) => createOrder(type)}
-        onAddBot={addBot}
-        onRemoveBot={removeBot}
-        botCount={bots.length}
-        isCreating={isCreating}
-      />
-
-      {/* Fixed Bottom Bots Panel */}
+      {/* Fixed Bottom Panel - Full Width */}
       <div className="fixed bottom-0 left-0 right-0 z-[60] border-t border-border/40 bg-background/90 backdrop-blur-xl">
-        {/* Collapsed Header */}
+        {/* Order Controls Section */}
+        <div className="w-full border-b border-border/20 bg-muted/10">
+          <div className="px-8 py-4 flex items-center justify-center gap-8">
+            {/* Order Controls */}
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">
+                  Order
+                </span>
+                <div className="flex items-center gap-2">
+                  {authState.user?.role === 'MANAGER' ? (
+                    <>
+                      <Button
+                        onClick={() => createOrder('NORMAL')}
+                        disabled={isCreating}
+                        variant="default"
+                        size="sm"
+                        className="h-10 px-4 rounded-md gap-2 font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Order
+                      </Button>
+
+                      <Button
+                        onClick={() => createOrder('VIP')}
+                        disabled={isCreating}
+                        variant="outline"
+                        size="sm"
+                        className="h-10 px-4 rounded-md gap-2 font-bold border-amber-500/30 text-amber-500 bg-amber-500/5 transition-all hover:bg-amber-500/10 hover:scale-105 active:scale-95"
+                      >
+                        <Star className="w-4 h-4 fill-amber-500" />
+                        VIP Order
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      onClick={() => createOrder()}
+                      disabled={isCreating}
+                      variant="default"
+                      size="sm"
+                      className="h-10 px-4 rounded-md gap-2 font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create Order
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {authState.user?.role === 'MANAGER' && (
+              <>
+                <Separator orientation="vertical" className="h-10 bg-white/10" />
+
+                {/* Bot Controls */}
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">
+                      Fleet ({bots.length})
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={addBot}
+                        disabled={isCreating}
+                        variant="secondary"
+                        size="sm"
+                        className="h-10 px-4 rounded-md gap-2 font-bold bg-white/5 border border-white/10 transition-all hover:bg-white/10 hover:scale-105 active:scale-95"
+                      >
+                        <Plus className="w-4 h-4 text-blue-400" />
+                        Deploy Bot
+                      </Button>
+
+                      {bots.length > 0 && (
+                        <Button
+                          onClick={removeBot}
+                          disabled={isCreating}
+                          variant="outline"
+                          size="sm"
+                          className="h-10 w-10 p-0 rounded-md border-destructive/20 text-destructive bg-destructive/5 transition-all hover:bg-destructive/10 hover:scale-105 active:scale-95"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <Separator orientation="vertical" className="h-10 bg-white/10" />
+
+                {/* Clear All Orders */}
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">
+                      Manage
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={clearOrders}
+                        disabled={isCreating}
+                        variant="outline"
+                        size="sm"
+                        className="h-10 px-4 rounded-md gap-2 font-bold border-destructive/30 text-destructive bg-destructive/5 transition-all hover:bg-destructive/10 hover:scale-105 active:scale-95"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Clear All Orders
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Cooking Bots Header */}
         <div
           className="flex items-center justify-between px-8 py-3 cursor-pointer hover:bg-muted/30 transition-colors"
           onClick={() => setBotsCollapsed(!botsCollapsed)}
@@ -608,6 +698,7 @@ export function Dashboard() {
                         status={bot.status}
                         currentOrderId={bot.currentOrderId}
                         orderNumber={currentOrder?.orderNumber ?? null}
+                        remainingMs={botProgress.get(bot.id)}
                       />
                     )
                   })

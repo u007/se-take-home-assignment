@@ -1,5 +1,5 @@
 import { Button } from './ui/button'
-import { Plus, Minus, Star, Cpu, ListChecks } from 'lucide-react'
+import { Plus, Minus, Star, Cpu, ListChecks, Trash2 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import { cn } from '@/lib/utils'
 import { Separator } from './ui/separator'
@@ -8,6 +8,7 @@ interface ControlPanelProps {
   onCreateOrder: (type?: 'NORMAL' | 'VIP') => void
   onAddBot: () => void
   onRemoveBot: () => void
+  onClearOrders?: () => void
   botCount: number
   isCreating?: boolean
 }
@@ -16,6 +17,7 @@ export function ControlPanel({
   onCreateOrder,
   onAddBot,
   onRemoveBot,
+  onClearOrders,
   botCount,
   isCreating = false,
 }: ControlPanelProps) {
@@ -108,6 +110,33 @@ export function ControlPanel({
                       <Minus className="w-4 h-4" />
                     </Button>
                   )}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {isManager && onClearOrders && (
+          <>
+            <Separator orientation="vertical" className="h-10 bg-white/10" />
+
+            {/* Clear All Orders */}
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">
+                  Manage
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={onClearOrders}
+                    disabled={isCreating}
+                    variant="outline"
+                    size="sm"
+                    className="h-10 px-4 rounded-md gap-2 font-bold border-destructive/30 text-destructive bg-destructive/5 transition-all hover:bg-destructive/10 hover:scale-105 active:scale-95"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Clear All Orders
+                  </Button>
                 </div>
               </div>
             </div>

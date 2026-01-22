@@ -17,9 +17,11 @@ import { Route as ApiOrdersRouteRouteImport } from './routes/api/orders/route'
 import { Route as ApiBotsRouteRouteImport } from './routes/api/bots/route'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiOrdersCompleteRouteRouteImport } from './routes/api/orders/complete/route'
+import { Route as ApiOrdersClearRouteRouteImport } from './routes/api/orders/clear/route'
 import { Route as ApiOrdersIdRouteRouteImport } from './routes/api/orders/$id/route'
 import { Route as ApiBotsIdRouteRouteImport } from './routes/api/bots/$id/route'
 import { Route as ApiAuthLoginRouteRouteImport } from './routes/api/auth/login/route'
+import { Route as ApiBotsIdClaimRouteRouteImport } from './routes/api/bots/$id/claim/route'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -61,6 +63,11 @@ const ApiOrdersCompleteRouteRoute = ApiOrdersCompleteRouteRouteImport.update({
   path: '/complete',
   getParentRoute: () => ApiOrdersRouteRoute,
 } as any)
+const ApiOrdersClearRouteRoute = ApiOrdersClearRouteRouteImport.update({
+  id: '/clear',
+  path: '/clear',
+  getParentRoute: () => ApiOrdersRouteRoute,
+} as any)
 const ApiOrdersIdRouteRoute = ApiOrdersIdRouteRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -76,6 +83,11 @@ const ApiAuthLoginRouteRoute = ApiAuthLoginRouteRouteImport.update({
   path: '/api/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBotsIdClaimRouteRoute = ApiBotsIdClaimRouteRouteImport.update({
+  id: '/claim',
+  path: '/claim',
+  getParentRoute: () => ApiBotsIdRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -85,10 +97,12 @@ export interface FileRoutesByFullPath {
   '/api/orders': typeof ApiOrdersRouteRouteWithChildren
   '/api/sync': typeof ApiSyncRouteRoute
   '/api/auth/login': typeof ApiAuthLoginRouteRoute
-  '/api/bots/$id': typeof ApiBotsIdRouteRoute
+  '/api/bots/$id': typeof ApiBotsIdRouteRouteWithChildren
   '/api/orders/$id': typeof ApiOrdersIdRouteRoute
+  '/api/orders/clear': typeof ApiOrdersClearRouteRoute
   '/api/orders/complete': typeof ApiOrdersCompleteRouteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/bots/$id/claim': typeof ApiBotsIdClaimRouteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -98,10 +112,12 @@ export interface FileRoutesByTo {
   '/api/orders': typeof ApiOrdersRouteRouteWithChildren
   '/api/sync': typeof ApiSyncRouteRoute
   '/api/auth/login': typeof ApiAuthLoginRouteRoute
-  '/api/bots/$id': typeof ApiBotsIdRouteRoute
+  '/api/bots/$id': typeof ApiBotsIdRouteRouteWithChildren
   '/api/orders/$id': typeof ApiOrdersIdRouteRoute
+  '/api/orders/clear': typeof ApiOrdersClearRouteRoute
   '/api/orders/complete': typeof ApiOrdersCompleteRouteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/bots/$id/claim': typeof ApiBotsIdClaimRouteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -112,10 +128,12 @@ export interface FileRoutesById {
   '/api/orders': typeof ApiOrdersRouteRouteWithChildren
   '/api/sync': typeof ApiSyncRouteRoute
   '/api/auth/login': typeof ApiAuthLoginRouteRoute
-  '/api/bots/$id': typeof ApiBotsIdRouteRoute
+  '/api/bots/$id': typeof ApiBotsIdRouteRouteWithChildren
   '/api/orders/$id': typeof ApiOrdersIdRouteRoute
+  '/api/orders/clear': typeof ApiOrdersClearRouteRoute
   '/api/orders/complete': typeof ApiOrdersCompleteRouteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/bots/$id/claim': typeof ApiBotsIdClaimRouteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -129,8 +147,10 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/bots/$id'
     | '/api/orders/$id'
+    | '/api/orders/clear'
     | '/api/orders/complete'
     | '/api/auth/$'
+    | '/api/bots/$id/claim'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -142,8 +162,10 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/bots/$id'
     | '/api/orders/$id'
+    | '/api/orders/clear'
     | '/api/orders/complete'
     | '/api/auth/$'
+    | '/api/bots/$id/claim'
   id:
     | '__root__'
     | '/'
@@ -155,8 +177,10 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/bots/$id'
     | '/api/orders/$id'
+    | '/api/orders/clear'
     | '/api/orders/complete'
     | '/api/auth/$'
+    | '/api/bots/$id/claim'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -228,6 +252,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOrdersCompleteRouteRouteImport
       parentRoute: typeof ApiOrdersRouteRoute
     }
+    '/api/orders/clear': {
+      id: '/api/orders/clear'
+      path: '/clear'
+      fullPath: '/api/orders/clear'
+      preLoaderRoute: typeof ApiOrdersClearRouteRouteImport
+      parentRoute: typeof ApiOrdersRouteRoute
+    }
     '/api/orders/$id': {
       id: '/api/orders/$id'
       path: '/$id'
@@ -249,15 +280,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthLoginRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/bots/$id/claim': {
+      id: '/api/bots/$id/claim'
+      path: '/claim'
+      fullPath: '/api/bots/$id/claim'
+      preLoaderRoute: typeof ApiBotsIdClaimRouteRouteImport
+      parentRoute: typeof ApiBotsIdRouteRoute
+    }
   }
 }
 
+interface ApiBotsIdRouteRouteChildren {
+  ApiBotsIdClaimRouteRoute: typeof ApiBotsIdClaimRouteRoute
+}
+
+const ApiBotsIdRouteRouteChildren: ApiBotsIdRouteRouteChildren = {
+  ApiBotsIdClaimRouteRoute: ApiBotsIdClaimRouteRoute,
+}
+
+const ApiBotsIdRouteRouteWithChildren = ApiBotsIdRouteRoute._addFileChildren(
+  ApiBotsIdRouteRouteChildren,
+)
+
 interface ApiBotsRouteRouteChildren {
-  ApiBotsIdRouteRoute: typeof ApiBotsIdRouteRoute
+  ApiBotsIdRouteRoute: typeof ApiBotsIdRouteRouteWithChildren
 }
 
 const ApiBotsRouteRouteChildren: ApiBotsRouteRouteChildren = {
-  ApiBotsIdRouteRoute: ApiBotsIdRouteRoute,
+  ApiBotsIdRouteRoute: ApiBotsIdRouteRouteWithChildren,
 }
 
 const ApiBotsRouteRouteWithChildren = ApiBotsRouteRoute._addFileChildren(
@@ -266,11 +316,13 @@ const ApiBotsRouteRouteWithChildren = ApiBotsRouteRoute._addFileChildren(
 
 interface ApiOrdersRouteRouteChildren {
   ApiOrdersIdRouteRoute: typeof ApiOrdersIdRouteRoute
+  ApiOrdersClearRouteRoute: typeof ApiOrdersClearRouteRoute
   ApiOrdersCompleteRouteRoute: typeof ApiOrdersCompleteRouteRoute
 }
 
 const ApiOrdersRouteRouteChildren: ApiOrdersRouteRouteChildren = {
   ApiOrdersIdRouteRoute: ApiOrdersIdRouteRoute,
+  ApiOrdersClearRouteRoute: ApiOrdersClearRouteRoute,
   ApiOrdersCompleteRouteRoute: ApiOrdersCompleteRouteRoute,
 }
 

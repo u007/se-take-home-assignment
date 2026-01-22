@@ -11,6 +11,7 @@ interface OrderCardProps {
   status: 'PENDING' | 'PROCESSING' | 'COMPLETE'
   botId: string | null
   createdAt: string | number
+  processingStartedAt?: string | number | null
   completedAt: string | number | null
   className?: string
 }
@@ -46,6 +47,7 @@ export function OrderCard({
   status,
   botId,
   createdAt,
+  processingStartedAt,
   completedAt,
   className = '',
 }: OrderCardProps) {
@@ -66,16 +68,23 @@ export function OrderCard({
   }, [status])
 
   // Calculate time info
-  const [waitTime, setWaitTime] = useState(() => getTimeSince(createdAt))
+  const startTime =
+    status === 'PROCESSING' && processingStartedAt
+      ? processingStartedAt
+      : createdAt
+
+  const [waitTime, setWaitTime] = useState(() => getTimeSince(startTime))
 
   // Update wait time every second
   useEffect(() => {
     if (status === 'COMPLETE') return
+    // Immediate update to handle phase change
+    setWaitTime(getTimeSince(startTime))
     const interval = setInterval(() => {
-      setWaitTime(getTimeSince(createdAt))
+      setWaitTime(getTimeSince(startTime))
     }, 1000)
     return () => clearInterval(interval)
-  }, [createdAt, status])
+  }, [startTime, status])
 
   // Calculate duration for completed orders
   const duration =

@@ -64,6 +64,8 @@ export const Route = createFileRoute('/api/bots/$id')({
               .set({
                 status: 'PENDING',
                 botId: null,
+                processingStartedAt: null,
+                completedAt: null,
                 updatedAt: new Date(),
               })
               .where(
@@ -114,6 +116,8 @@ export const Route = createFileRoute('/api/bots/$id')({
               .set({
                 status: 'PENDING',
                 botId: null,
+                processingStartedAt: null,
+                completedAt: null,
                 updatedAt: new Date(),
               })
               .where(

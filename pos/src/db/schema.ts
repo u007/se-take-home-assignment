@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 
 // Users table with soft delete support
@@ -13,17 +13,37 @@ export const users = sqliteTable('users', {
 })
 
 // Orders table with soft delete and foreign keys
-export const orders = sqliteTable('orders', {
-  id: text('id').primaryKey(), // UUID7
-  orderNumber: integer('order_number').notNull(),
-  type: text('type', { enum: ['NORMAL', 'VIP'] }).notNull(),
-  status: text('status', { enum: ['PENDING', 'PROCESSING', 'COMPLETE'] }).notNull(),
-  userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
-  botId: text('bot_id').references(() => bots.id, { onDelete: 'set null' }),
+export const orders = sqliteTable(
+  'orders',
+  {
+    id: text('id').primaryKey(), // UUID7
+    orderNumber: integer('order_number').notNull(),
+    type: text('type', { enum: ['NORMAL', 'VIP'] }).notNull(),
+    status: text('status', { enum: ['PENDING', 'PROCESSING', 'COMPLETE'] }).notNull(),
+    userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+    botId: text('bot_id').references(() => bots.id, { onDelete: 'set null' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
+    processingStartedAt: integer('processing_started_at', { mode: 'timestamp' }),
+    completedAt: integer('completed_at', { mode: 'timestamp' }),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
+    deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+  },
+  (table) => ({
+    orderNumberActiveIdx: uniqueIndex('orders_order_number_active')
+      .on(table.orderNumber)
+      .where(sql`${table.deletedAt} is null`),
+    processingBotActiveIdx: uniqueIndex('orders_processing_bot_active')
+      .on(table.botId)
+      .where(
+        sql`${table.status} = 'PROCESSING' and ${table.deletedAt} is null and ${table.botId} is not null`,
+      ),
+  }),
+)
+
+// Order number sequence table (auto-incrementing)
+export const orderNumbers = sqliteTable('order_numbers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
-  completedAt: integer('completed_at', { mode: 'timestamp' }),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
-  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
 })
 
 // Bots table with soft delete support

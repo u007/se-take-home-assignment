@@ -14,6 +14,7 @@ export interface Order {
   userId: string | null
   botId: string | null
   createdAt: Date
+  processingStartedAt: Date | null
   completedAt: Date | null
   updatedAt: Date
   deletedAt: Date | null
@@ -50,6 +51,9 @@ function loadOrderStoreState(): OrderStoreState {
       const orders = (parsed.orders || []).map((o: any) => ({
         ...o,
         createdAt: new Date(o.createdAt),
+        processingStartedAt: o.processingStartedAt
+          ? new Date(o.processingStartedAt)
+          : null,
         completedAt: o.completedAt ? new Date(o.completedAt) : null,
         updatedAt: new Date(o.updatedAt),
         deletedAt: o.deletedAt ? new Date(o.deletedAt) : null,

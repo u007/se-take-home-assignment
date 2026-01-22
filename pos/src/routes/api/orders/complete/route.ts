@@ -75,7 +75,14 @@ export const Route = createFileRoute('/api/orders/complete')({
               currentOrderId: null,
               updatedAt: now,
             })
-            .where(and(eq(bots.id, payload.botId), isNull(bots.deletedAt)))
+            .where(
+              and(
+                eq(bots.id, payload.botId),
+                eq(bots.currentOrderId, payload.orderId),
+                eq(bots.status, 'PROCESSING'),
+                isNull(bots.deletedAt),
+              ),
+            )
 
           return Response.json({ message: 'Order completed' })
         } catch (error) {

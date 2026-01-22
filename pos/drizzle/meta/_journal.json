@@ -8,6 +8,13 @@
       "when": 1768988835999,
       "tag": "0000_silent_silver_surfer",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1769063782322,
+      "tag": "0001_lyrical_madelyne_pryor",
+      "breakpoints": true
     }
   ]
 }

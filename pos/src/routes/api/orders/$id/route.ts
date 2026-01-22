@@ -1,10 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Client } from '@upstash/qstash'
 import { getDb } from '@/db'
-import { orders } from '@/db/schema'
+import { orders, bots } from '@/db/schema'
 import { eq, and, isNull } from 'drizzle-orm'
 
 const BOT_PROCESSING_DELAY_SECONDS = 10
+
+const isConstraintError = (error: unknown) =>
+  error instanceof Error &&
+  /SQLITE_CONSTRAINT|UNIQUE constraint failed|constraint failed/i.test(
+    error.message,
+  )
 
 interface UpdateOrderRequest {
   status?: 'PENDING' | 'PROCESSING' | 'COMPLETE'
@@ -34,12 +40,15 @@ export const Route = createFileRoute('/api/orders/$id')({
 
           const now = new Date()
           const nowMs = now.getTime()
+          const wantsProcessing =
+            body.status === 'PROCESSING' &&
+            body.botId !== undefined &&
+            body.botId !== null
+          const processingBotId = wantsProcessing ? (body.botId as string) : null
 
           // Prevent assigning a bot to an order that's already being processed
           if (
-            body.status === 'PROCESSING' &&
-            body.botId !== undefined &&
-            body.botId !== null &&
+            wantsProcessing &&
             order.status === 'PROCESSING' &&
             order.botId !== null &&
             order.botId !== body.botId
@@ -50,11 +59,30 @@ export const Route = createFileRoute('/api/orders/$id')({
             )
           }
 
-          const shouldScheduleCompletion =
-            body.status === 'PROCESSING' &&
-            body.botId !== undefined &&
-            body.botId !== null &&
-            order.status !== 'PROCESSING'
+          if (wantsProcessing && processingBotId) {
+            const botResult = await db
+              .select()
+              .from(bots)
+              .where(and(eq(bots.id, processingBotId), isNull(bots.deletedAt)))
+              .limit(1)
+
+            const bot = botResult[0]
+            if (!bot) {
+              return Response.json({ error: 'Bot not found' }, { status: 404 })
+            }
+
+            const botBusy =
+              bot.status !== 'IDLE' && bot.currentOrderId !== params.id
+            if (botBusy) {
+              return Response.json(
+                { error: 'Bot is already processing another order' },
+                { status: 409 },
+              )
+            }
+          }
+
+          const isProcessingTransition = wantsProcessing && order.status !== 'PROCESSING'
+          const shouldScheduleCompletion = isProcessingTransition
 
           if (shouldScheduleCompletion) {
             if (!process.env.QSTASH_TOKEN) {
@@ -73,22 +101,33 @@ export const Route = createFileRoute('/api/orders/$id')({
             }
 
             try {
-              const callbackUrl = new URL('/api/orders/complete', baseUrl).toString()
+              const callbackUrl = new URL(
+                '/api/orders/complete',
+                baseUrl,
+              ).toString()
               const client = new Client({
                 token: process.env.QSTASH_TOKEN,
               })
 
               await client.publishJSON({
                 url: callbackUrl,
-                body: { orderId: params.id, botId: body.botId },
+                body: { orderId: params.id, botId: processingBotId },
                 delay: BOT_PROCESSING_DELAY_SECONDS,
                 deduplicationId: `${params.id}-${nowMs}`,
               })
-              console.log(`[QStash] Scheduled order completion for ${params.id} in ${BOT_PROCESSING_DELAY_SECONDS}s`)
+              console.log(
+                `[QStash] Scheduled order completion for ${params.id} in ${BOT_PROCESSING_DELAY_SECONDS}s`,
+              )
             } catch (qstashError) {
-              console.error('[QStash] Failed to schedule order completion:', qstashError)
+              console.error(
+                '[QStash] Failed to schedule order completion:',
+                qstashError,
+              )
               return Response.json(
-                { error: 'Failed to schedule order completion. Check APP_BASE_URL format (must include protocol like https://)' },
+                {
+                  error:
+                    'Failed to schedule order completion. Check APP_BASE_URL format (must include protocol like https://)',
+                },
                 { status: 500 },
               )
             }
@@ -104,16 +143,57 @@ export const Route = createFileRoute('/api/orders/$id')({
             if (body.status === 'COMPLETE') {
               updates.completedAt = now
             }
+            if (body.status === 'PENDING') {
+              updates.processingStartedAt = null
+              updates.completedAt = null
+            }
           }
 
           if (body.botId !== undefined) {
             updates.botId = body.botId
           }
 
-          await db
-            .update(orders)
-            .set(updates)
-            .where(and(eq(orders.id, params.id), isNull(orders.deletedAt)))
+          if (isProcessingTransition) {
+            updates.processingStartedAt = now
+            updates.completedAt = null
+          }
+
+          try {
+            if (wantsProcessing && processingBotId) {
+              await db.transaction(async (tx) => {
+                await tx
+                  .update(orders)
+                  .set(updates)
+                  .where(
+                    and(eq(orders.id, params.id), isNull(orders.deletedAt)),
+                  )
+
+                await tx
+                  .update(bots)
+                  .set({
+                    status: 'PROCESSING',
+                    currentOrderId: params.id,
+                    updatedAt: now,
+                  })
+                  .where(
+                    and(eq(bots.id, processingBotId), isNull(bots.deletedAt)),
+                  )
+              })
+            } else {
+              await db
+                .update(orders)
+                .set(updates)
+                .where(and(eq(orders.id, params.id), isNull(orders.deletedAt)))
+            }
+          } catch (error) {
+            if (isConstraintError(error)) {
+              return Response.json(
+                { error: 'Order or bot assignment conflict' },
+                { status: 409 },
+              )
+            }
+            throw error
+          }
 
           // Return updated order
           const updatedResult = await db

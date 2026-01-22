@@ -9,6 +9,7 @@ export interface Order {
   userId: string | null
   botId: string | null
   createdAt: Date
+  processingStartedAt: Date | null
   completedAt: Date | null
   updatedAt: Date
   deletedAt: Date | null

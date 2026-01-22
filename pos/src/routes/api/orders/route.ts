@@ -1,15 +1,39 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Client } from '@upstash/qstash'
 import { getDb } from '@/db'
-import { orders, bots } from '@/db/schema'
+import { orders, bots, orderNumbers } from '@/db/schema'
 import { and, eq, isNull, desc, sql } from 'drizzle-orm'
 import { uuidv7 } from '@/lib/uuid7'
 
 const BOT_PROCESSING_DELAY_SECONDS = 10
 
-const getUpdatedAtMs = (value: unknown) => {
+const getTimestampMs = (value: unknown) => {
+  if (!value) return null
   if (value instanceof Date) return value.getTime()
-  return new Date(value as string | number).getTime()
+  const parsed = new Date(value as string | number).getTime()
+  return Number.isNaN(parsed) ? null : parsed
+}
+
+// Fix bots stuck in PROCESSING without an order
+const recoverStuckBots = async () => {
+  const db = getDb()
+  const now = new Date()
+
+  // Find bots that are PROCESSING but have no currentOrderId
+  await db
+    .update(bots)
+    .set({
+      status: 'IDLE',
+      currentOrderId: null,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(bots.status, 'PROCESSING'),
+        isNull(bots.currentOrderId),
+        isNull(bots.deletedAt),
+      ),
+    )
 }
 
 const resumeProcessingOrders = async () => {
@@ -32,8 +56,13 @@ const resumeProcessingOrders = async () => {
   for (const order of processingOrders) {
     if (!order.botId) continue
 
-    const updatedAtMs = getUpdatedAtMs(order.updatedAt)
-    const elapsedMs = nowMs - updatedAtMs
+    const startedAtMs =
+      getTimestampMs(order.processingStartedAt) ??
+      getTimestampMs(order.updatedAt) ??
+      getTimestampMs(order.createdAt)
+    if (!startedAtMs) continue
+
+    const elapsedMs = nowMs - startedAtMs
 
     if (elapsedMs >= BOT_PROCESSING_DELAY_SECONDS * 1000) {
       const now = new Date(nowMs)
@@ -53,7 +82,14 @@ const resumeProcessingOrders = async () => {
           currentOrderId: null,
           updatedAt: now,
         })
-        .where(and(eq(bots.id, order.botId), isNull(bots.deletedAt)))
+        .where(
+          and(
+            eq(bots.id, order.botId),
+            eq(bots.currentOrderId, order.id),
+            eq(bots.status, 'PROCESSING'),
+            isNull(bots.deletedAt),
+          ),
+        )
       continue
     }
 
@@ -67,7 +103,7 @@ const resumeProcessingOrders = async () => {
         url: callbackUrl,
         body: { orderId: order.id, botId: order.botId },
         delay: remainingSeconds,
-        deduplicationId: `${order.id}-${updatedAtMs}`,
+        deduplicationId: `${order.id}-${startedAtMs}`,
       })
     }
   }
@@ -85,6 +121,7 @@ export const Route = createFileRoute('/api/orders')({
     handlers: {
       GET: async () => {
         try {
+          await recoverStuckBots()
           await resumeProcessingOrders()
 
           const db = getDb()
@@ -119,31 +156,32 @@ export const Route = createFileRoute('/api/orders')({
         try {
           const body: CreateOrderRequest = await request.json()
 
-          // Get next order number (max + 1, or 1 if no orders)
           const db = getDb()
-          const maxOrderResult = await db
-            .select({ orderNumber: orders.orderNumber })
-            .from(orders)
-            .where(isNull(orders.deletedAt))
-            .orderBy(desc(orders.orderNumber))
-            .limit(1)
+          const newOrder = await db.transaction(async (tx) => {
+            const sequenceResult = await tx
+              .insert(orderNumbers)
+              .values({})
+              .returning({ id: orderNumbers.id })
 
-          const nextOrderNumber = maxOrderResult[0]?.orderNumber
-            ? maxOrderResult[0].orderNumber + 1
-            : 1
+            const orderNumber = sequenceResult[0]?.id
+            if (!orderNumber) {
+              throw new Error('Failed to allocate order number')
+            }
 
-          // Create order with UUID7
-          const newOrder = {
-            id: uuidv7(),
-            orderNumber: nextOrderNumber,
-            type: body.type,
-            status: 'PENDING' as const,
-            userId: body.userId,
-            botId: null,
-            completedAt: null,
-          }
+            const order = {
+              id: uuidv7(),
+              orderNumber,
+              type: body.type,
+              status: 'PENDING' as const,
+              userId: body.userId,
+              botId: null,
+              completedAt: null,
+              processingStartedAt: null,
+            }
 
-          await db.insert(orders).values(newOrder)
+            await tx.insert(orders).values(order)
+            return order
+          })
 
           return Response.json({
             order: newOrder,
