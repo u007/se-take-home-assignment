@@ -188,8 +188,8 @@ pnpm build
 
 1. Set environment variables:
    ```
-   DATABASE_URL=libsql://your-turso-url
-   DB_PASS=your-turso-auth-token
+   TURSO_DATABASE_URL=libsql://your-turso-url
+   TURSO_AUTH_TOKEN=your-turso-auth-token
    ```
 
 2. Deploy:

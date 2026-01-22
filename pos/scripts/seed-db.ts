@@ -1,26 +1,40 @@
-import Database from 'better-sqlite3'
-import { drizzle as drizzleLocal } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
-import * as schema from '../src/db/schema'
-import { uuidv7 } from '../src/lib/uuid7'
+import { drizzle } from 'drizzle-orm/libsql';
+import { migrate } from 'drizzle-orm/libsql/migrator';
+import * as schema from '../src/db/schema';
+import { uuidv7 } from '../src/lib/uuid7';
+import { createClient } from '@libsql/client';
+import dotenv from 'dotenv';
+import path from 'path';
 
-// Create/ open local database
-const dbPath = './local.db'
-const localDb = new Database(dbPath)
-const db = drizzleLocal(localDb, { schema })
+// Load environment variables from .env file
+dotenv.config({ path: path.resolve(process.cwd(), 'pos/.env') });
 
-console.log('Seeding local database...')
+const tursoUrl = process.env.TURSO_DATABASE_URL;
+const tursoAuthToken = process.env.TURSO_AUTH_TOKEN;
+
+if (!tursoUrl) {
+  throw new Error('TURSO_DATABASE_URL must be set in the pos/.env file');
+}
+
+const client = createClient({
+  url: tursoUrl,
+  authToken: tursoAuthToken,
+});
+
+const db = drizzle(client, { schema });
+
+console.log('Seeding TursoDB database...');
 
 // Run migrations
-console.log('Running migrations...')
-await migrate(db, { migrationsFolder: './drizzle' })
-console.log('Migrations complete!')
+console.log('Running migrations...');
+await migrate(db, { migrationsFolder: './drizzle' });
+console.log('Migrations complete!');
 
 // Seed demo users
-console.log('Seeding demo users...')
+console.log('Seeding demo users...');
 
-const passwordHash = Buffer.from('password123').toString('base64')
-const now = Math.floor(Date.now() / 1000) // Unix timestamp in seconds
+const passwordHash = Buffer.from('password123').toString('base64');
+const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
 
 const demoUsers = [
   {
@@ -50,55 +64,47 @@ const demoUsers = [
     updatedAt: now,
     deletedAt: null,
   },
-]
+];
 
 // Check if users already exist
-const existingUsers = localDb.prepare('SELECT * FROM users').all()
+const existingUsers = await db.select().from(schema.users);
 if (existingUsers.length === 0) {
-  for (const user of demoUsers) {
-    localDb
-      .prepare(
-        'INSERT INTO users (id, username, password_hash, role, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      )
-      .run(
-        user.id,
-        user.username,
-        user.passwordHash,
-        user.role,
-        user.createdAt,
-        user.updatedAt,
-        user.deletedAt
-      )
-  }
-  console.log('Demo users created!')
+  await db.insert(schema.users).values(demoUsers);
+  console.log('Demo users created!');
 } else {
-  console.log('Users already exist, skipping...')
+  console.log('Users already exist, skipping...');
 }
 
 // Seed initial bots (2 bots)
-console.log('Seeding initial bots...')
-const existingBots = localDb.prepare('SELECT * FROM bots').all()
+console.log('Seeding initial bots...');
+const existingBots = await db.select().from(schema.bots);
 if (existingBots.length === 0) {
+  const botsToInsert = [];
   for (let i = 1; i <= 2; i++) {
-    const botId = uuidv7()
-    localDb
-      .prepare(
-        'INSERT INTO bots (id, status, current_order_id, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?)'
-      )
-      .run(botId, 'IDLE', null, now, now, null)
+    const botId = uuidv7();
+    botsToInsert.push({
+      id: botId,
+      status: 'IDLE',
+      currentOrderId: null,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null
+    });
   }
-  console.log('Initial bots created!')
+  await db.insert(schema.bots).values(botsToInsert);
+  console.log('Initial bots created!');
 } else {
-  console.log('Bots already exist, skipping...')
+  console.log('Bots already exist, skipping...');
 }
 
 // Verify seeded data
-const userCount = localDb.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number }
-const botCount = localDb.prepare('SELECT COUNT(*) as count FROM bots').get() as { count: number }
+const userCountResult = await db.select({ count: schema.sql`count(*)` }).from(schema.users);
+const botCountResult = await db.select({ count: schema.sql`count(*)` }).from(schema.bots);
+const userCount = userCountResult[0].count;
+const botCount = botCountResult[0].count;
 
-console.log(`\nDatabase seeded successfully!`)
-console.log(`- ${userCount.count} users`)
-console.log(`- ${botCount.count} bots`)
-console.log(`\nDatabase location: ${dbPath}`)
 
-localDb.close()
+console.log(`\nDatabase seeded successfully!`);
+console.log(`- ${userCount} users`);
+console.log(`- ${botCount} bots`);
+console.log(`\nDatabase location: ${tursoUrl}`);

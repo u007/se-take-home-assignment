@@ -9,12 +9,12 @@ let _dbInstance: ReturnType<typeof drizzle> | null = null
 export function getDb() {
   if (_dbInstance) return _dbInstance
 
-  // Use Turso in production (when DATABASE_URL is set)
+  // Use Turso in production (when TURSO_DATABASE_URL is set)
   // Use local SQLite in development
-  if (process.env.DATABASE_URL) {
+  if (process.env.TURSO_DATABASE_URL) {
     const client = createClient({
-      url: process.env.DATABASE_URL,
-      authToken: process.env.DB_PASS,
+      url: process.env.TURSO_DATABASE_URL,
+      authToken: process.env.TURSO_AUTH_TOKEN,
     })
     _dbInstance = drizzle(client, { schema })
   } else {
@@ -25,8 +25,8 @@ export function getDb() {
       const localDb = new Database('./local.db')
       _dbInstance = drizzleLocal(localDb, { schema })
     } catch (e) {
-      console.warn('better-sqlite3 not available, DATABASE_URL required for production')
-      throw new Error('Database not available. Please set DATABASE_URL environment variable or install better-sqlite3 for local development.')
+      console.warn('better-sqlite3 not available, TURSO_DATABASE_URL required for production')
+      throw new Error('Database not available. Please set TURSO_DATABASE_URL environment variable or install better-sqlite3 for local development.')
     }
   }
 
