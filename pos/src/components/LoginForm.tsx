@@ -11,6 +11,7 @@ import {
   Keyboard,
   ShieldCheck,
 } from 'lucide-react'
+import mcdLogo from '../assets/mcd_logo.png'
 import { useAuthStore } from '@/store/auth'
 import type { User } from '@/db/schema'
 import { cn } from '@/lib/utils'
@@ -56,7 +57,7 @@ export function LoginForm() {
       }
 
       authActions.login(data.user as User)
-      navigate({ to: '/' })
+      navigate({ to: '/dashboard' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
     } finally {
@@ -78,11 +79,16 @@ export function LoginForm() {
             <LayoutDashboard className="w-8 h-8 text-primary-foreground" />
           </div>
           <div className="space-y-1">
-            <h1 className="text-5xl font-black tracking-tighter">
+            <h1 className="text-5xl font-black tracking-tighter flex items-center justify-center gap-4">
               FEED<span className="text-primary italic">ME</span>
+              <img
+                src={mcdLogo}
+                alt="MCD"
+                className="w-12 h-12 object-contain brightness-110 contrast-125"
+              />
             </h1>
             <p className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground/60">
-              Quantum Order Controller
+              Powered by FeedMe
             </p>
           </div>
         </div>

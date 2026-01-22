@@ -77,28 +77,6 @@ if (existingUsers.length === 0) {
   console.log('Users already exist, skipping...');
 }
 
-// Seed initial bots (2 bots)
-console.log('Seeding initial bots...');
-const existingBots = await db.select().from(schema.bots);
-if (existingBots.length === 0) {
-  const botsToInsert = [];
-  for (let i = 1; i <= 2; i++) {
-    const botId = uuidv7();
-    botsToInsert.push({
-      id: botId,
-      status: 'IDLE',
-      currentOrderId: null,
-      createdAt: now,
-      updatedAt: now,
-      deletedAt: null
-    });
-  }
-  await db.insert(schema.bots).values(botsToInsert);
-  console.log('Initial bots created!');
-} else {
-  console.log('Bots already exist, skipping...');
-}
-
 // Verify seeded data
 const userCountResult = await db.select({ count: sql`count(*)` }).from(schema.users);
 const botCountResult = await db.select({ count: sql`count(*)` }).from(schema.bots);

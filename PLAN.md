@@ -625,7 +625,7 @@ feedme-order-controller/
    - [ ] VIP orders queue before normal orders
    - [ ] Order numbers are unique and increasing
    - [ ] + Bot creates idle bot (MANAGER only)
-   - [ ] Bot picks up order after 10 seconds (client-side timer)
+   - [ ] Bot completes order after 10 seconds (backend QStash callback)
    - [ ] Completed orders move to COMPLETE
    - [ ] - Bot removes bot, returns order to PENDING (MANAGER only)
    - [ ] Idle bot shows IDLE status
@@ -669,7 +669,7 @@ feedme-order-controller/
    - Bot processing is orchestrated by a `BotProcessorService` singleton to prevent duplicate timers within a tab
 
 3. **TanStack Store vs Query**:
-   - **Store**: For client-side shared state (auth, UI state, bot timers)
+   - **Store**: For client-side shared state (auth, UI state)
    - **Query**: For server state (orders, bots from API)
    - Both persist for offline support
 

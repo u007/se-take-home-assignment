@@ -5,8 +5,7 @@ import { cn } from '@/lib/utils'
 import { Separator } from './ui/separator'
 
 interface ControlPanelProps {
-  onCreateNormalOrder: () => void
-  onCreateVIPOrder: () => void
+  onCreateOrder: (type?: 'NORMAL' | 'VIP') => void
   onAddBot: () => void
   onRemoveBot: () => void
   botCount: number
@@ -14,8 +13,7 @@ interface ControlPanelProps {
 }
 
 export function ControlPanel({
-  onCreateNormalOrder,
-  onCreateVIPOrder,
+  onCreateOrder,
   onAddBot,
   onRemoveBot,
   botCount,
@@ -24,8 +22,8 @@ export function ControlPanel({
   const { state } = useAuthStore()
   const user = state.user
 
-  const canCreateVIP = user?.role === 'VIP' || user?.role === 'MANAGER'
-  const canManageBots = user?.role === 'MANAGER'
+  const isManager = user?.role === 'MANAGER'
+  const canManageBots = isManager
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-fit px-6">
@@ -37,27 +35,40 @@ export function ControlPanel({
               Order
             </span>
             <div className="flex items-center gap-2">
-              <Button
-                onClick={onCreateNormalOrder}
-                disabled={isCreating}
-                variant="default"
-                size="sm"
-                className="h-10 px-4 rounded-md gap-2 font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
-              >
-                <Plus className="w-4 h-4" />
-                Normal
-              </Button>
+              {isManager ? (
+                <>
+                  <Button
+                    onClick={() => onCreateOrder('NORMAL')}
+                    disabled={isCreating}
+                    variant="default"
+                    size="sm"
+                    className="h-10 px-4 rounded-md gap-2 font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Order
+                  </Button>
 
-              {canCreateVIP && (
+                  <Button
+                    onClick={() => onCreateOrder('VIP')}
+                    disabled={isCreating}
+                    variant="outline"
+                    size="sm"
+                    className="h-10 px-4 rounded-md gap-2 font-bold border-amber-500/30 text-amber-500 bg-amber-500/5 transition-all hover:bg-amber-500/10 hover:scale-105 active:scale-95"
+                  >
+                    <Star className="w-4 h-4 fill-amber-500" />
+                    VIP Order
+                  </Button>
+                </>
+              ) : (
                 <Button
-                  onClick={onCreateVIPOrder}
+                  onClick={() => onCreateOrder()}
                   disabled={isCreating}
-                  variant="outline"
+                  variant="default"
                   size="sm"
-                  className="h-10 px-4 rounded-md gap-2 font-bold border-amber-500/30 text-amber-500 bg-amber-500/5 transition-all hover:bg-amber-500/10 hover:scale-105 active:scale-95"
+                  className="h-10 px-4 rounded-md gap-2 font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
                 >
-                  <Star className="w-4 h-4 fill-amber-500" />
-                  VIP Order
+                  <Plus className="w-4 h-4" />
+                  Create Order
                 </Button>
               )}
             </div>

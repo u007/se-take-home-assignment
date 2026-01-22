@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useAuthStore } from '@/store/auth'
-import { useBotStore, useBotTimerCleanup } from '@/store/bot'
-import { botProcessor } from '@/lib/bot-processor'
 import { OrderCard } from './OrderCard'
 import { BotDisplay } from './BotDisplay'
 import { ControlPanel } from './ControlPanel'
@@ -18,6 +16,7 @@ import {
   Cpu,
   ListChecks,
 } from 'lucide-react'
+import mcdLogo from '../assets/mcd_logo.png'
 import { Button } from './ui/button'
 import { useQuery } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
@@ -28,22 +27,21 @@ interface DashboardOrder {
   orderNumber: number
   type: 'NORMAL' | 'VIP'
   status: 'PENDING' | 'PROCESSING' | 'COMPLETE'
+  botId: string | null
+  createdAt: string | number
+  completedAt: string | number | null
 }
 
 interface DashboardBot {
   id: string
-  status: 'IDLE' | 'PROCESSING'
+  status: 'IDLE' | 'PROCESSING' | 'DELETED'
   currentOrderId: string | null
 }
 
 export function Dashboard() {
   const navigate = useNavigate()
   const { state: authState, actions: authActions } = useAuthStore()
-  const { state: botState, actions: botActions } = useBotStore()
   const [isCreating, setIsCreating] = useState(false)
-
-  // Cleanup bot timers on unmount
-  useBotTimerCleanup()
 
   // Fetch orders
   const {
@@ -96,8 +94,11 @@ export function Dashboard() {
   }
 
   // Create order
-  const createOrder = async (type: 'NORMAL' | 'VIP') => {
+  const createOrder = async (type?: 'NORMAL' | 'VIP') => {
     if (!authState.user) return
+
+    // Determine order type based on user role if not explicitly provided
+    const orderType = type ?? (authState.user.role === 'VIP' ? 'VIP' : 'NORMAL')
 
     setIsCreating(true)
     try {
@@ -105,7 +106,7 @@ export function Dashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type,
+          type: orderType,
           userId: authState.user.id,
         }),
       })
@@ -131,15 +132,7 @@ export function Dashboard() {
 
       if (!response.ok) throw new Error('Failed to create bot')
 
-      const data = await response.json()
-      const bot = data.bot
-
-      // Initialize bot in store
-      botActions.setBotState(bot.id, {
-        status: 'IDLE',
-        currentOrderId: null,
-        remainingMs: 10000,
-      })
+      await response.json()
 
       await refetchBots()
     } catch (error) {
@@ -158,14 +151,12 @@ export function Dashboard() {
 
     setIsCreating(true)
     try {
+      // Delete bot via API (backend handles returning order to PENDING)
       const response = await fetch(`/api/bots/${newestBot.id}`, {
         method: 'DELETE',
       })
 
       if (!response.ok) throw new Error('Failed to remove bot')
-
-      // Remove from store
-      botActions.removeBot(newestBot.id)
 
       await refetchBots()
       await refetchOrders()
@@ -178,8 +169,6 @@ export function Dashboard() {
 
   // Auto-assign orders to idle bots
   useEffect(() => {
-    if (!botState.isLeader) return
-
     const idleBots = bots.filter((b: DashboardBot) => b.status === 'IDLE')
     const unassignedOrders = pendingOrders
 
@@ -189,30 +178,44 @@ export function Dashboard() {
 
       const assignOrder = async () => {
         try {
-          const [orderResponse, botResponse] = await Promise.all([
-            fetch(`/api/orders/${order.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                status: 'PROCESSING',
-                botId: bot.id,
-              }),
+          const orderResponse = await fetch(`/api/orders/${order.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              status: 'PROCESSING',
+              botId: bot.id,
             }),
-            fetch(`/api/bots/${bot.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                status: 'PROCESSING',
-                currentOrderId: order.id,
-              }),
-            }),
-          ])
+          })
 
-          if (!orderResponse.ok || !botResponse.ok) {
-            throw new Error('Failed to update status')
+          if (!orderResponse.ok) {
+            const errorText = await orderResponse.text()
+            throw new Error(`Failed to update order: ${errorText}`)
           }
 
-          botProcessor.startOrderProcessing(bot.id, order.id)
+          const botResponse = await fetch(`/api/bots/${bot.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              status: 'PROCESSING',
+              currentOrderId: order.id,
+            }),
+          })
+
+          if (!botResponse.ok) {
+            const errorText = await botResponse.text()
+            await fetch(`/api/orders/${order.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                status: 'PENDING',
+                botId: null,
+              }),
+            })
+            throw new Error(`Failed to update bot: ${errorText}`)
+          }
+
+          await refetchOrders()
+          await refetchBots()
         } catch (error) {
           console.error('Error assigning order:', error)
         }
@@ -220,48 +223,7 @@ export function Dashboard() {
 
       void assignOrder()
     }
-  }, [bots, pendingOrders, botState.isLeader])
-
-  // Listen for bot completion
-  useEffect(() => {
-    const handleBotComplete = async (event: CustomEvent) => {
-      const { botId, orderId } = event.detail
-
-      try {
-        await Promise.all([
-          fetch(`/api/orders/${orderId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'COMPLETE' }),
-          }),
-          fetch(`/api/bots/${botId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              status: 'IDLE',
-              currentOrderId: null,
-            }),
-          }),
-        ])
-      } catch (error) {
-        console.error('Error completing order:', error)
-      }
-
-      await refetchOrders()
-      await refetchBots()
-    }
-
-    window.addEventListener(
-      'bot-order-complete',
-      handleBotComplete as EventListener,
-    )
-    return () => {
-      window.removeEventListener(
-        'bot-order-complete',
-        handleBotComplete as EventListener,
-      )
-    }
-  }, [refetchOrders, refetchBots])
+  }, [bots, pendingOrders, refetchOrders, refetchBots])
 
   return (
     <div className="min-h-screen bg-mesh flex flex-col selection:bg-primary/20">
@@ -270,15 +232,17 @@ export function Dashboard() {
         <div className="max-w-[1600px] mx-auto px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2.5 group cursor-default">
-              <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:scale-110">
-                <LayoutDashboard className="w-5 h-5 text-primary-foreground" />
+              <div className="w-10 h-10 rounded-md flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:scale-110">
+                <img
+                  src={mcdLogo}
+                  alt="MCD"
+                  className="w-6 h-6 object-contain brightness-110 contrast-125"
+                />
               </div>
               <div className="flex flex-col">
-                <h1 className="text-xl font-black tracking-tighter leading-none">
-                  FEED<span className="text-primary">ME</span>
-                </h1>
+                <h1 className="text-xl font-black tracking-tighter leading-none flex items-center gap-2"></h1>
                 <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mt-0.5">
-                  Quantum OS v4.0
+                  Powered by FeedMe
                 </span>
               </div>
             </div>
@@ -364,12 +328,6 @@ export function Dashboard() {
           {/* Dashboard Summary Hooks */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
             {[
-              {
-                label: 'System Uptime',
-                value: '99.99%',
-                icon: Activity,
-                color: 'text-emerald-500',
-              },
               {
                 label: 'Active Bots',
                 value: bots.length,
@@ -492,6 +450,9 @@ export function Dashboard() {
                           orderNumber={order.orderNumber}
                           type={order.type}
                           status={order.status}
+                          botId={order.botId}
+                          createdAt={order.createdAt}
+                          completedAt={order.completedAt}
                         />
                       ))}
                     </div>
@@ -506,14 +467,8 @@ export function Dashboard() {
             <div className="flex items-center justify-between mb-8 px-2">
               <div className="flex flex-col">
                 <h3 className="text-xs font-black text-foreground uppercase tracking-[0.4em] mb-1">
-                  Neural Fleet Status
+                  Cooking bots
                 </h3>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-sm bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.1em]">
-                    Quantum Network Synchronized
-                  </span>
-                </div>
               </div>
 
               <div className="flex items-center gap-2 glass px-3 py-1.5 rounded-md">
@@ -560,14 +515,16 @@ export function Dashboard() {
                 </div>
               ) : (
                 bots.map((bot: DashboardBot) => {
-                  const botTimerState = botState.bots.get(bot.id)
+                  const currentOrder = bot.currentOrderId
+                    ? orders.find((o: DashboardOrder) => o.id === bot.currentOrderId)
+                    : null
                   return (
                     <BotDisplay
                       key={bot.id}
                       botId={bot.id}
                       status={bot.status}
-                      remainingMs={botTimerState?.remainingMs}
                       currentOrderId={bot.currentOrderId}
+                      orderNumber={currentOrder?.orderNumber ?? null}
                     />
                   )
                 })
@@ -579,8 +536,7 @@ export function Dashboard() {
 
       {/* Control Panel */}
       <ControlPanel
-        onCreateNormalOrder={() => createOrder('NORMAL')}
-        onCreateVIPOrder={() => createOrder('VIP')}
+        onCreateOrder={(type) => createOrder(type)}
         onAddBot={addBot}
         onRemoveBot={removeBot}
         botCount={bots.length}

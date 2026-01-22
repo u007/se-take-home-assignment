@@ -6,9 +6,10 @@ import { cn } from '@/lib/utils'
 
 interface BotDisplayProps {
   botId: string
-  status: 'IDLE' | 'PROCESSING'
+  status: 'IDLE' | 'PROCESSING' | 'DELETED'
   remainingMs?: number
   currentOrderId?: string | null
+  orderNumber?: number | null
   className?: string
 }
 
@@ -17,19 +18,22 @@ export function BotDisplay({
   status,
   remainingMs = 10000,
   currentOrderId = null,
+  orderNumber = null,
   className = '',
 }: BotDisplayProps) {
   const isProcessing = status === 'PROCESSING'
+  const isDeleted = status === 'DELETED'
   const progress = isProcessing ? ((10000 - remainingMs) / 10000) * 100 : 0
-  const remainingSeconds = Math.ceil(remainingMs / 1000)
 
   return (
     <Card
       className={cn(
         'group relative border-border/50 transition-all duration-500',
-        isProcessing
-          ? 'border-blue-500/40 bg-blue-500/[0.03] shadow-lg shadow-blue-500/5'
-          : 'bg-card/40 backdrop-blur-md opacity-80',
+        isDeleted
+          ? 'border-destructive/40 bg-destructive/[0.03] opacity-50'
+          : isProcessing
+            ? 'border-blue-500/40 bg-blue-500/[0.03] shadow-lg shadow-blue-500/5'
+            : 'bg-card/40 backdrop-blur-md opacity-80',
         className,
       )}
     >
@@ -40,9 +44,11 @@ export function BotDisplay({
             <div
               className={cn(
                 'p-1.5 rounded-sm border transition-colors',
-                isProcessing
-                  ? 'bg-blue-500/10 border-blue-500/30 text-blue-500'
-                  : 'bg-muted border-border text-muted-foreground',
+                isDeleted
+                  ? 'bg-destructive/10 border-destructive/30 text-destructive'
+                  : isProcessing
+                    ? 'bg-blue-500/10 border-blue-500/30 text-blue-500'
+                    : 'bg-muted border-border text-muted-foreground',
               )}
             >
               <Cpu
@@ -63,9 +69,11 @@ export function BotDisplay({
             variant="outline"
             className={cn(
               'text-[9px] font-black uppercase tracking-widest px-2 py-0 border-none',
-              isProcessing
-                ? 'bg-blue-500/10 text-blue-500'
-                : 'bg-muted/50 text-muted-foreground/70',
+              isDeleted
+                ? 'bg-destructive/10 text-destructive'
+                : isProcessing
+                  ? 'bg-blue-500/10 text-blue-500'
+                  : 'bg-muted/50 text-muted-foreground/70',
             )}
           >
             {status}
@@ -73,7 +81,14 @@ export function BotDisplay({
         </div>
 
         {/* Processing State */}
-        {isProcessing && currentOrderId ? (
+        {isDeleted ? (
+          <div className="flex items-center justify-center gap-2 py-4 border border-dashed border-destructive/50 rounded-sm bg-destructive/5">
+            <div className="w-1.5 h-1.5 rounded-sm bg-destructive/30" />
+            <span className="text-[10px] font-bold text-destructive/50 uppercase tracking-[0.15em]">
+              Offline
+            </span>
+          </div>
+        ) : isProcessing && orderNumber ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
@@ -83,7 +98,7 @@ export function BotDisplay({
                 </span>
               </div>
               <span className="font-mono text-[10px] font-black text-blue-500 bg-blue-500/10 px-1.5 rounded-sm border border-blue-500/20">
-                ORDER #{String(currentOrderId).padStart(3, '0')}
+                ORDER #{String(orderNumber).padStart(3, '0')}
               </span>
             </div>
 
@@ -95,15 +110,6 @@ export function BotDisplay({
                   className="absolute top-0 bottom-0 left-0 bg-blue-400 blur-sm opacity-50"
                   style={{ width: `${progress}%` }}
                 />
-              </div>
-              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-tighter">
-                <span className="text-muted-foreground/60">
-                  {Math.round(progress)}% Optimized
-                </span>
-                <span className="flex items-center gap-1 text-blue-500">
-                  <Clock className="w-2.5 h-2.5" />
-                  {remainingSeconds}s
-                </span>
               </div>
             </div>
           </div>

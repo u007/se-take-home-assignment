@@ -1,13 +1,13 @@
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useAuthStore, authStore } from '@/store/auth'
-import { LoginForm } from '@/components/LoginForm'
+import { Dashboard } from '@/components/Dashboard'
 
-export const Route = createFileRoute('/login')({
-  component: LoginComponent,
+export const Route = createFileRoute('/dashboard')({
+  component: DashboardComponent,
 })
 
-function LoginComponent() {
+function DashboardComponent() {
   const router = useRouter()
   const { state: authState } = useAuthStore()
   const [isHydrated, setIsHydrated] = useState(false)
@@ -19,6 +19,7 @@ function LoginComponent() {
       const saved = localStorage.getItem('auth-store-state')
       if (saved) {
         const parsed = JSON.parse(saved)
+        // Only update if different (prevents infinite loop)
         if (parsed.isAuthenticated !== authStore.state.isAuthenticated) {
           authStore.setState(parsed)
         }
@@ -30,17 +31,19 @@ function LoginComponent() {
   }, [])
 
   useEffect(() => {
+    // Only redirect after hydration
     if (!isHydrated) return
-    // Redirect to dashboard if already authenticated
-    if (authState.isAuthenticated) {
-      router.navigate({ to: '/dashboard' })
+
+    // Redirect to login if not authenticated
+    if (!authState.isAuthenticated) {
+      router.navigate({ to: '/login' })
     }
   }, [authState.isAuthenticated, router, isHydrated])
 
-  // Show nothing while redirecting
-  if (!isHydrated || authState.isAuthenticated) {
+  // Show loading while hydrating or if not authenticated
+  if (!isHydrated || !authState.isAuthenticated) {
     return null
   }
 
-  return <LoginForm />
+  return <Dashboard />
 }

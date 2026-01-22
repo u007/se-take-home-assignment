@@ -17,14 +17,14 @@ interface AuthStoreState {
   isAuthenticated: boolean
 }
 
-// Initialize store from sessionStorage if available
+// Initialize store from localStorage if available
 function loadAuthStoreState(): AuthStoreState {
   if (typeof window === 'undefined') {
     return { user: null, isAuthenticated: false }
   }
 
   try {
-    const saved = sessionStorage.getItem('auth-store-state')
+    const saved = localStorage.getItem('auth-store-state')
     if (saved) {
       return JSON.parse(saved)
     }
@@ -40,49 +40,52 @@ export const authStore = new Store<AuthStoreState>({
   ...loadAuthStoreState(),
 })
 
-// Subscribe to state changes and persist to sessionStorage
-if (typeof window !== 'undefined') {
-  authStore.subscribe((state) => {
+// Helper to save state to localStorage
+function saveAuthState(state: AuthStoreState) {
+  if (typeof window !== 'undefined') {
     try {
-      sessionStorage.setItem('auth-store-state', JSON.stringify(state))
+      localStorage.setItem('auth-store-state', JSON.stringify(state))
     } catch (e) {
       console.error('Failed to save auth store state:', e)
     }
-  })
+  }
 }
 
 // Auth store actions
 export const authActions = {
   // Login user
   login: (user: User) => {
-    authStore.setState({
-      user,
-      isAuthenticated: true,
-    })
+    const newState = { user, isAuthenticated: true }
+    authStore.setState(newState)
+    saveAuthState(newState)
   },
 
   // Logout user
   logout: () => {
-    authStore.setState({
-      user: null,
-      isAuthenticated: false,
-    })
+    const newState = { user: null, isAuthenticated: false }
+    authStore.setState(newState)
+    saveAuthState(newState)
   },
 
   // Update user
   updateUser: (user: User) => {
-    authStore.setState((prev) => ({
-      ...prev,
-      user,
-    }))
+    authStore.setState((prev) => {
+      const newState = { ...prev, user }
+      saveAuthState(newState)
+      return newState
+    })
   },
 }
 
 // React hook for auth store
 export function useAuthStore() {
-  const [state, setState] = useState<AuthStoreState>(authStore.state)
+  // Use lazy initializer to get fresh state on first render
+  const [state, setState] = useState<AuthStoreState>(() => authStore.state)
 
   useEffect(() => {
+    // Sync with current store state on mount (handles localStorage hydration)
+    setState(authStore.state)
+
     const unsubscribe = authStore.subscribe((newState) => setState(newState))
     return unsubscribe
   }, [])

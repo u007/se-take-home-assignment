@@ -1,14 +1,22 @@
 import { Card, CardContent } from './ui/card'
 import { Badge } from './ui/badge'
-import { Clock, CheckCircle2, Loader2, Star } from 'lucide-react'
+import { Clock, CheckCircle2, Loader2, Star, ChefHat, Cpu } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { formatDuration, getTimeSince } from '@/lib/utils'
+import { useState, useEffect } from 'react'
 
 interface OrderCardProps {
   orderNumber: number
   type: 'NORMAL' | 'VIP'
   status: 'PENDING' | 'PROCESSING' | 'COMPLETE'
+  botId: string | null
+  createdAt: string | number
+  completedAt: string | number | null
   className?: string
 }
+
+// Cooking animation phases
+const COOKING_ICONS = ['🔥', '🍳', '🧑‍🍳', '⏳', '🔥']
 
 const statusConfig = {
   PENDING: {
@@ -36,11 +44,46 @@ export function OrderCard({
   orderNumber,
   type,
   status,
+  botId,
+  createdAt,
+  completedAt,
   className = '',
 }: OrderCardProps) {
   const config = statusConfig[status]
   const StatusIcon = config.icon
   const isVIP = type === 'VIP'
+
+  // Cooking animation state
+  const [cookingIndex, setCookingIndex] = useState(0)
+
+  // Animate cooking icon
+  useEffect(() => {
+    if (status !== 'PROCESSING') return
+    const interval = setInterval(() => {
+      setCookingIndex((prev) => (prev + 1) % COOKING_ICONS.length)
+    }, 800)
+    return () => clearInterval(interval)
+  }, [status])
+
+  // Calculate time info
+  const [waitTime, setWaitTime] = useState(() => getTimeSince(createdAt))
+
+  // Update wait time every second
+  useEffect(() => {
+    if (status === 'COMPLETE') return
+    const interval = setInterval(() => {
+      setWaitTime(getTimeSince(createdAt))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [createdAt, status])
+
+  // Calculate duration for completed orders
+  const duration =
+    status === 'COMPLETE' && completedAt && createdAt
+      ? formatDuration(
+          new Date(completedAt).getTime() - new Date(createdAt).getTime(),
+        )
+      : null
 
   return (
     <Card
@@ -58,7 +101,7 @@ export function OrderCard({
       )}
 
       <CardContent className="p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
               Order Reference
@@ -102,6 +145,56 @@ export function OrderCard({
               />
               {config.label}
             </Badge>
+          </div>
+        </div>
+
+        {/* Bottom Section: Bot indicator, cooking icon, time info */}
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/30">
+          {/* Left: Bot indicator + cooking icon */}
+          <div className="flex items-center gap-2">
+            {botId ? (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-sm bg-blue-500/10 border border-blue-500/20">
+                <Cpu className="w-3 h-3 text-blue-500 animate-pulse" />
+                <span className="font-mono text-[9px] font-bold text-blue-500 uppercase">
+                  {botId.slice(-4)}
+                </span>
+              </div>
+            ) : (
+              <div className="w-[1px] h-3" />
+            )}
+
+            {status === 'PROCESSING' && (
+              <span className="text-lg" title="Cooking in progress">
+                {COOKING_ICONS[cookingIndex]}
+              </span>
+            )}
+          </div>
+
+          {/* Right: Wait time or duration */}
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-tighter">
+            {status === 'COMPLETE' && duration ? (
+              <>
+                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                <span className="text-muted-foreground/60">Done in</span>
+                <span className="text-emerald-500">{duration}</span>
+              </>
+            ) : (
+              <>
+                <Clock className="w-3 h-3 text-muted-foreground/60" />
+                <span className="text-muted-foreground/60">
+                  {status === 'PENDING' ? 'Waiting' : 'Elapsed'}
+                </span>
+                <span
+                  className={cn(
+                    status === 'PROCESSING'
+                      ? 'text-blue-500'
+                      : 'text-amber-500',
+                  )}
+                >
+                  {waitTime}
+                </span>
+              </>
+            )}
           </div>
         </div>
       </CardContent>

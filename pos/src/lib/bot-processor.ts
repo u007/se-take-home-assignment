@@ -19,9 +19,17 @@ class BotProcessorService {
   private leaderInterval: number | null = null
   private timerInterval: number | null = null
   private activeTimers: Map<string, number> = new Map() // botId -> timerId
+  private leaderId = 'server'
 
   private constructor() {
     if (typeof window !== 'undefined') {
+      const existingLeaderId = window.sessionStorage.getItem('feedme-leader-id')
+      this.leaderId =
+        existingLeaderId ||
+        (window.crypto?.randomUUID?.() || `leader-${Date.now()}`)
+      if (!existingLeaderId) {
+        window.sessionStorage.setItem('feedme-leader-id', this.leaderId)
+      }
       this.channel = new BroadcastChannel('feedme-bot-sync')
       this.setupLeaderElection()
     }
@@ -41,12 +49,19 @@ class BotProcessorService {
   private setupLeaderElection() {
     const checkLeadership = () => {
       const leaderKey = 'feedme-leader-lease'
+      const leaderOwnerKey = 'feedme-leader-owner'
       const now = Date.now()
       const currentLeader = localStorage.getItem(leaderKey)
+      const currentOwner = localStorage.getItem(leaderOwnerKey)
+      const leaseTime = currentLeader ? parseInt(currentLeader, 10) : NaN
+      const leaseExpired =
+        !Number.isFinite(leaseTime) ||
+        leaseTime < now - LEADER_HEARTBEAT_MS * 2
 
       // If no leader or lease expired, become leader
-      if (!currentLeader || parseInt(currentLeader) < now - LEADER_HEARTBEAT_MS * 2) {
+      if (leaseExpired || currentOwner === this.leaderId) {
         localStorage.setItem(leaderKey, now.toString())
+        localStorage.setItem(leaderOwnerKey, this.leaderId)
         botActions.setLeader(true)
         this.startProcessing()
       } else {
@@ -58,14 +73,6 @@ class BotProcessorService {
     // Check leadership periodically
     this.leaderInterval = window.setInterval(() => {
       checkLeadership()
-      // Refresh our lease if we're leader
-      if (botStore.state.bots) {
-        const leaderKey = 'feedme-leader-lease'
-        const currentLeader = localStorage.getItem(leaderKey)
-        if (currentLeader && botStore.state.isLeader) {
-          localStorage.setItem(leaderKey, Date.now().toString())
-        }
-      }
     }, LEADER_HEARTBEAT_MS)
 
     // Initial check
@@ -198,7 +205,11 @@ class BotProcessorService {
 
     // Clear leader lease
     if (botStore.state.isLeader) {
-      localStorage.removeItem('feedme-leader-lease')
+      const currentOwner = localStorage.getItem('feedme-leader-owner')
+      if (!currentOwner || currentOwner === this.leaderId) {
+        localStorage.removeItem('feedme-leader-lease')
+        localStorage.removeItem('feedme-leader-owner')
+      }
     }
   }
 }

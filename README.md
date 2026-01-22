@@ -141,5 +141,8 @@ All requirements have been verified and tested. See `TEST.md` for detailed test 
 - **UUID7** for all primary keys (time-ordered, conflict-resistant)
 - **Soft Delete** with `deleted_at` timestamp
 - **Foreign Key Cascades**: User delete preserves orders, Bot delete unassigns orders
-- **Client-side Bot Processing**: Single-writer pattern with BroadcastChannel for multi-tab sync
+- **Backend Bot Processing**: Order completion scheduled via Upstash QStash (10s delay)
+
+### Environment
+- `APP_BASE_URL` is required so QStash can call back into `/api/orders/complete` (use a public URL in dev, e.g. via ngrok).
 - **Offline-First**: Local IndexedDB storage with sync queue for when online

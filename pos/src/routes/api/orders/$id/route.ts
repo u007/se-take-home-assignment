@@ -1,7 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { Client } from '@upstash/qstash'
 import { getDb } from '@/db'
 import { orders } from '@/db/schema'
 import { eq, and, isNull } from 'drizzle-orm'
+
+const BOT_PROCESSING_DELAY_SECONDS = 10
 
 interface UpdateOrderRequest {
   status?: 'PENDING' | 'PROCESSING' | 'COMPLETE'
@@ -27,6 +30,40 @@ export const Route = createFileRoute('/api/orders/$id')({
           const order = orderResult[0]
           if (!order) {
             return Response.json({ error: 'Order not found' }, { status: 404 })
+          }
+
+          const shouldScheduleCompletion =
+            body.status === 'PROCESSING' &&
+            body.botId !== undefined &&
+            body.botId !== null &&
+            order.status !== 'PROCESSING'
+
+          if (shouldScheduleCompletion) {
+            if (!process.env.QSTASH_TOKEN) {
+              return Response.json(
+                { error: 'QSTASH_TOKEN is not configured' },
+                { status: 500 },
+              )
+            }
+
+            const baseUrl = process.env.APP_BASE_URL
+            if (!baseUrl) {
+              return Response.json(
+                { error: 'APP_BASE_URL is not configured' },
+                { status: 500 },
+              )
+            }
+
+            const callbackUrl = new URL('/api/orders/complete', baseUrl).toString()
+            const client = new Client({
+              token: process.env.QSTASH_TOKEN,
+            })
+
+            await client.publishJSON({
+              url: callbackUrl,
+              body: { orderId: params.id, botId: body.botId },
+              delay: BOT_PROCESSING_DELAY_SECONDS,
+            })
           }
 
           // Build update object
