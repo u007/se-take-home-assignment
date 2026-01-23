@@ -122,7 +122,6 @@ export function Dashboard() {
     // Determine order type based on user role if not explicitly provided
     const orderType = type ?? (authState.user.role === 'VIP' ? 'VIP' : 'NORMAL')
 
-    setIsCreating(true)
     try {
       const response = await fetch('/api/orders', {
         method: 'POST',
@@ -138,8 +137,6 @@ export function Dashboard() {
       await refetchOrders()
     } catch (error) {
       console.error('Error creating order:', error)
-    } finally {
-      setIsCreating(false)
     }
   }
 
@@ -472,7 +469,6 @@ export function Dashboard() {
                     <>
                       <Button
                         onClick={() => createOrder('NORMAL')}
-                        disabled={isCreating}
                         variant="default"
                         size="sm"
                         className="h-10 px-4 rounded-md gap-2 font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
@@ -483,7 +479,6 @@ export function Dashboard() {
 
                       <Button
                         onClick={() => createOrder('VIP')}
-                        disabled={isCreating}
                         variant="outline"
                         size="sm"
                         className="h-10 px-4 rounded-md gap-2 font-bold border-amber-500/30 text-amber-500 bg-amber-500/5 transition-all hover:bg-amber-500/10 hover:scale-105 active:scale-95"
@@ -495,7 +490,6 @@ export function Dashboard() {
                   ) : (
                     <Button
                       onClick={() => createOrder()}
-                      disabled={isCreating}
                       variant="default"
                       size="sm"
                       className="h-10 px-4 rounded-md gap-2 font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
