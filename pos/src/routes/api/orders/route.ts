@@ -115,7 +115,10 @@ const resumeProcessingOrders = async () => {
   if (processingOrders.length === 0) return
 
   const nowMs = Date.now()
-  const baseUrl = process.env.APP_BASE_URL
+  const rawBaseUrl = process.env.APP_BASE_URL
+  const baseUrl = rawBaseUrl && !rawBaseUrl.startsWith('http')
+    ? `https://${rawBaseUrl}`
+    : rawBaseUrl
   const token = process.env.QSTASH_TOKEN
   const client = baseUrl && token ? new Client({ token }) : null
   const callbackUrl = baseUrl
