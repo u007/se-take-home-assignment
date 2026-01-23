@@ -199,7 +199,7 @@ For production multi-instance deployments, recommend implementing a proper job q
 
 ### System Documentation
 
-- **[how.md](./how.md)**: Technical flow overview with architectural diagrams, user story flows, and file references. Start here for a visual understanding of how the system works without diving into code.
+- **[HOW.md](./HOW.md)**: Technical flow overview with architectural diagrams, user story flows, and file references. Start here for a visual understanding of how the system works without diving into code.
 - **[ORDERS_BOT_QUEUE.md](./ORDERS_BOT_QUEUE.md)**: Comprehensive explanation of the orders → bot queue system, including data structures, assignment flow, recovery logic, stuck bot conditions, client-side state management, and the complete order lifecycle with failure scenarios.
 
 ### Environment
