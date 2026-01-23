@@ -703,7 +703,6 @@ export function Dashboard() {
         )}
       </div>
 
-      {/* Offline Indicator */}
       <OfflineIndicator />
     </div>
   )
