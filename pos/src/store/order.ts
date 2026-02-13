@@ -1,9 +1,12 @@
 import { Store } from '@tanstack/store'
 import { useEffect, useState } from 'react'
 
-// Order types
-export type OrderType = 'NORMAL' | 'VIP'
-export type OrderStatus = 'PENDING' | 'PROCESSING' | 'COMPLETE'
+import type { z } from 'zod'
+import type { orderTypeSchema, orderStatusSchema } from '@/lib/schemas/order'
+
+// Order types (inferred from Zod schemas)
+export type OrderType = z.infer<typeof orderTypeSchema>
+export type OrderStatus = z.infer<typeof orderStatusSchema>
 
 // Order interface
 export interface Order {
@@ -138,6 +141,7 @@ export const orderActions = {
 
   // Add a new order (optimistic update)
   addOrder: (order: Order) => {
+    console.log('order', order)
     orderStore.setState((prev) => {
       const orders = [...prev.orders, order]
       return {

@@ -2,10 +2,10 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Client } from '@upstash/qstash'
 import { getDb } from '@/db'
 import { orders, bots, orderNumbers, resumeLocks } from '@/db/schema'
-import { and, eq, isNull, desc, sql, lt } from 'drizzle-orm'
+import { and, eq, isNull, desc, sql, lt, inArray } from 'drizzle-orm'
 import { uuidv7 } from '@/lib/uuid7'
 
-const BOT_PROCESSING_DELAY_SECONDS = 10
+import { BOT_PROCESSING_DELAY_SECONDS } from '@/lib/constants'
 const RESUME_LOCK_TTL_SECONDS = 30 // Lock expires after 30 seconds - prevents recovery from running too frequently
 const RESUME_LOCK_ID = 'resume_processing'
 
@@ -110,6 +110,7 @@ const resumeProcessingOrders = async () => {
   const processingOrders = await db
     .select()
     .from(orders)
+    .leftJoin(bots, eq(orders.botId, bots.id))
     .where(and(eq(orders.status, 'PROCESSING'), isNull(orders.deletedAt)))
 
   if (processingOrders.length === 0) return
@@ -125,8 +126,16 @@ const resumeProcessingOrders = async () => {
     ? new URL('/api/orders/complete', baseUrl).toString()
     : null
 
+  const listBots = await db
+    .select()
+    .from(bots)
+    .where(inArray(bots.id, processingOrders.map((o) => o.botId)))
+
   for (const order of processingOrders) {
     if (!order.botId) continue
+
+    const bot = listBots.find((b) => b.id === order.botId)
+    if (!bot) continue;
 
     const startedAtMs =
       getTimestampMs(order.processingStartedAt) ??
@@ -135,8 +144,9 @@ const resumeProcessingOrders = async () => {
     if (!startedAtMs) continue
 
     const elapsedMs = nowMs - startedAtMs
-
-    if (elapsedMs >= BOT_PROCESSING_DELAY_SECONDS * 1000) {
+    const botType = bot.botType
+    const botDelay = BOT_PROCESSING_DELAY_SECONDS[botType as keyof typeof BOT_PROCESSING_DELAY_SECONDS]
+    if (elapsedMs >= botDelay * 1000) {
       const now = new Date(nowMs)
       await db
         .update(orders)
@@ -174,7 +184,7 @@ const resumeProcessingOrders = async () => {
     if (client && callbackUrl) {
       const remainingSeconds = Math.max(
         1,
-        Math.ceil((BOT_PROCESSING_DELAY_SECONDS * 1000 - elapsedMs) / 1000),
+        Math.ceil((botDelay * 1000 - elapsedMs) / 1000),
       )
 
       await client.publishJSON({

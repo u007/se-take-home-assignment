@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { BotStatus } from '@/lib/schemas/bot'
 
 // Bot types
 export interface Bot {
   id: string
-  status: 'IDLE' | 'PROCESSING'
+  status: BotStatus
   currentOrderId: string | null
   createdAt: Date
   updatedAt: Date
@@ -37,7 +38,7 @@ async function createBot(): Promise<{ bot: Bot; message: string }> {
 
 async function updateBot(
   id: string,
-  updates: { status?: 'IDLE' | 'PROCESSING'; currentOrderId?: string | null }
+  updates: { status?: BotStatus; currentOrderId?: string | null }
 ): Promise<{ bot: Bot; message: string }> {
   const response = await fetch(`/api/bots/${id}`, {
     method: 'PATCH',
@@ -95,7 +96,7 @@ export function useUpdateBot() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: { status?: 'IDLE' | 'PROCESSING'; currentOrderId?: string | null } }) =>
+    mutationFn: ({ id, updates }: { id: string; updates: { status?: BotStatus; currentOrderId?: string | null } }) =>
       updateBot(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: botKeys.all })

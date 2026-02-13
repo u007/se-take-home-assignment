@@ -1,10 +1,13 @@
 import { Store } from '@tanstack/store'
 import { useEffect, useState } from 'react'
+import { BOT_PROCESSING_TIME_MS, DEFAULT_BOT_TIMER_STATE } from '@/lib/constants'
+import type { BotType, BotStatus } from '@/lib/schemas/bot'
 
 // Bot timer state type
 export interface BotTimerState {
   remainingMs: number
-  status: 'IDLE' | 'PROCESSING'
+  botType: BotType
+  status: BotStatus
   currentOrderId: string | null
   lastTick: number
 }
@@ -89,27 +92,26 @@ export const botActions = {
       // Ensure prev.bots is always a Map
       const prevBots = prev.bots instanceof Map ? prev.bots : new Map()
       const bots = new Map(prevBots)
-      const existing = bots.get(botId) || {
-        remainingMs: 10000, // 10 seconds
-        status: 'IDLE' as const,
-        currentOrderId: null,
-        lastTick: Date.now(),
-      }
-      bots.set(botId, {
+      const existing = bots.get(botId)
+      const newBot: BotTimerState = {
+        ...DEFAULT_BOT_TIMER_STATE,
+        remainingMs: BOT_PROCESSING_TIME_MS[(state?.botType ?? existing?.botType ?? 'NORMAL') as BotType],
         ...existing,
         ...state,
-        lastTick: updateTimestamp ? Date.now() : existing.lastTick,
-      })
+        lastTick: updateTimestamp ? Date.now() : (existing?.lastTick ?? Date.now()),
+      }
+      bots.set(botId, newBot)
       return { ...prev, bots }
     })
   },
 
-  // Start bot timer (10-second countdown)
-  startBotTimer: (botId: string, orderId: string) => {
+  // Start bot timer (countdown based on bot type)
+  startBotTimer: (botId: string, orderId: string, botType: BotType = 'NORMAL') => {
     botActions.setBotState(botId, {
+      botType,
       status: 'PROCESSING',
       currentOrderId: orderId,
-      remainingMs: 10000, // 10 seconds in milliseconds
+      remainingMs: BOT_PROCESSING_TIME_MS[botType],
       lastTick: Date.now(),
     })
   },
@@ -134,11 +136,12 @@ export const botActions = {
   },
 
   // Complete bot order (move to idle)
-  completeBotOrder: (botId: string) => {
+  completeBotOrder: (botId: string, botType: BotType = 'NORMAL') => {
     botActions.setBotState(botId, {
+      botType,
       status: 'IDLE',
       currentOrderId: null,
-      remainingMs: 10000,
+      remainingMs: BOT_PROCESSING_TIME_MS[botType],
     })
   },
 

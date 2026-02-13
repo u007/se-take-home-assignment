@@ -23,6 +23,8 @@ import { Button } from './ui/button'
 import { useQuery } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { Separator } from './ui/separator'
+import { BOT_PROCESSING_TIME_MS } from '@/lib/constants'
+import type { BotType, BotDisplayStatus } from '@/lib/schemas/bot'
 
 interface DashboardOrder {
   id: string
@@ -37,7 +39,8 @@ interface DashboardOrder {
 
 interface DashboardBot {
   id: string
-  status: 'IDLE' | 'PROCESSING' | 'DELETED'
+  botType: BotType
+  status: BotDisplayStatus
   currentOrderId: string | null
 }
 
@@ -141,11 +144,12 @@ export function Dashboard() {
   }
 
   // Add bot
-  const addBot = async () => {
+  const addBot = async (botType: 'NORMAL' | 'VIP' = 'NORMAL') => {
     setIsCreating(true)
     try {
       const response = await fetch('/api/bots', {
         method: 'POST',
+        body: JSON.stringify({ botType }),
         headers: { 'Content-Type': 'application/json' },
       })
 
@@ -253,7 +257,8 @@ export function Dashboard() {
       const startedAtMs = new Date(order.processingStartedAt).getTime()
       if (Number.isNaN(startedAtMs)) return
       const elapsedMs = Math.max(0, now - startedAtMs)
-      const remainingMs = Math.max(0, 10000 - elapsedMs)
+      const botTimer = BOT_PROCESSING_TIME_MS[bot.botType ?? 'NORMAL']
+      const remainingMs = Math.max(0, botTimer - elapsedMs)
       progress.set(bot.id, remainingMs)
     })
     return progress
@@ -514,7 +519,7 @@ export function Dashboard() {
                     </span>
                     <div className="flex items-center gap-2">
                       <Button
-                        onClick={addBot}
+                        onClick={() => addBot('NORMAL')}
                         disabled={isCreating}
                         variant="secondary"
                         size="sm"
@@ -522,6 +527,17 @@ export function Dashboard() {
                       >
                         <Plus className="w-4 h-4 text-blue-400" />
                         Deploy Bot
+                      </Button>
+
+                      <Button
+                        onClick={() => addBot('VIP') }
+                        disabled={isCreating}
+                        variant="secondary"
+                        size="sm"
+                        className="h-10 px-4 rounded-md gap-2 font-bold bg-white/5 border border-white/10 transition-all hover:bg-white/10 hover:scale-105 active:scale-95"
+                      >
+                        <Plus className="w-4 h-4 text-blue-400" />
+                        Deploy VIP Bot
                       </Button>
 
                       {bots.length > 0 && (
@@ -680,6 +696,7 @@ export function Dashboard() {
                   </div>
                 ) : (
                   bots.map((bot: DashboardBot) => {
+                    console.log('bot', { id: bot.id, botType: bot.botType });
                     const currentOrder = bot.currentOrderId
                       ? orders.find(
                           (o: DashboardOrder) => o.id === bot.currentOrderId,
@@ -687,6 +704,7 @@ export function Dashboard() {
                       : null
                     return (
                       <BotDisplay
+                        botType={bot.botType}
                         key={bot.id}
                         botId={bot.id}
                         status={bot.status}

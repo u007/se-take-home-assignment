@@ -4,7 +4,12 @@ import { bots, orders } from '@/db/schema'
 import { eq, and, isNull, desc } from 'drizzle-orm'
 import { uuidv7 } from '@/lib/uuid7'
 
-interface CreateBotRequest {}
+import type { z } from 'zod'
+import type { botTypeSchema } from '@/lib/schemas/bot'
+
+interface CreateBotRequest {
+  botType?: z.infer<typeof botTypeSchema>
+}
 
 // GET /api/bots - List all bots (excluding soft-deleted)
 // POST /api/bots - Create a new bot
@@ -30,13 +35,17 @@ export const Route = createFileRoute('/api/bots')({
         }
       },
 
-      POST: async () => {
+      POST: async ({ request }) => {
+        const body: CreateBotRequest = await request.json()
         try {
+          console.log('body', body)
+          const botType = body.botType ?? 'NORMAL'
           const db = getDb()
 
           // Create bot with UUID7
           const newBot = {
             id: uuidv7(),
+            botType,
             status: 'IDLE' as const,
             currentOrderId: null,
           }

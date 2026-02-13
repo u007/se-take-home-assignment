@@ -51,6 +51,7 @@ export const bots = sqliteTable('bots', {
   id: text('id').primaryKey(), // UUID7
   status: text('status', { enum: ['IDLE', 'PROCESSING'] }).notNull(),
   currentOrderId: text('current_order_id').references(() => orders.id, { onDelete: 'set null' }),
+  botType: text('bot_type', { enum: ['NORMAL', 'VIP'] }).notNull().default('NORMAL'),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),

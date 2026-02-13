@@ -3,8 +3,7 @@ import { Client } from '@upstash/qstash'
 import { getDb } from '@/db'
 import { bots, orders } from '@/db/schema'
 import { and, eq, isNull, sql } from 'drizzle-orm'
-
-const BOT_PROCESSING_DELAY_SECONDS = 10
+import { BOT_PROCESSING_DELAY_SECONDS } from '@/lib/constants'
 
 const isConstraintError = (error: unknown) =>
   error instanceof Error &&
@@ -124,7 +123,7 @@ export const Route = createFileRoute('/api/bots/$id/claim')({
                   orderId: claimResult.order.id,
                   botId: claimResult.bot.id,
                 },
-                delay: BOT_PROCESSING_DELAY_SECONDS,
+                delay: BOT_PROCESSING_DELAY_SECONDS[claimResult.bot.botType as keyof typeof BOT_PROCESSING_DELAY_SECONDS],
                 deduplicationId: `${claimResult.order.id}-${now.getTime()}`,
               })
             } catch (qstashError) {

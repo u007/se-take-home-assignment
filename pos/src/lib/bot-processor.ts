@@ -1,7 +1,6 @@
-import { botActions, botStore, type BotTimerState } from '../store/bot'
+import { botActions, botStore } from '../store/bot'
 
 // Bot processor configuration
-const BOT_PROCESSING_TIME_MS = 10000 // 10 seconds
 const TIMER_TICK_INTERVAL_MS = 100 // Update every 100ms
 const LEADER_HEARTBEAT_MS = 2000 // Leader heartbeat every 2 seconds
 

@@ -3,8 +3,10 @@ import { getDb } from '@/db'
 import { bots, orders } from '@/db/schema'
 import { eq, and, isNull } from 'drizzle-orm'
 
+import type { BotStatus } from '@/lib/schemas/bot'
+
 interface UpdateBotRequest {
-  status?: 'IDLE' | 'PROCESSING'
+  status?: BotStatus
   currentOrderId?: string | null
 }
 

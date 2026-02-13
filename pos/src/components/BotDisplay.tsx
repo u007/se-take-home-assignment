@@ -3,10 +3,13 @@ import { Badge } from './ui/badge'
 import { Progress } from './ui/progress'
 import { Bot, Clock, Zap, Cpu } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { BOT_PROCESSING_TIME_MS } from '@/lib/constants'
+import type { BotType, BotDisplayStatus } from '@/lib/schemas/bot'
 
 interface BotDisplayProps {
   botId: string
-  status: 'IDLE' | 'PROCESSING' | 'DELETED'
+  botType: BotType
+  status: BotDisplayStatus
   remainingMs?: number
   currentOrderId?: string | null
   orderNumber?: number | null
@@ -16,15 +19,18 @@ interface BotDisplayProps {
 export function BotDisplay({
   botId,
   status,
-  remainingMs = 10000,
+  botType,
+  remainingMs,
   currentOrderId = null,
   orderNumber = null,
   className = '',
 }: BotDisplayProps) {
   const isProcessing = status === 'PROCESSING'
   const isDeleted = status === 'DELETED'
-  const progress = isProcessing ? ((10000 - remainingMs) / 10000) * 100 : 0
-
+  const totalMs = BOT_PROCESSING_TIME_MS[botType ?? 'NORMAL']
+  const effectiveRemainingMs = remainingMs ?? totalMs
+  const progress = isProcessing ? ((totalMs - effectiveRemainingMs) / totalMs) * 100 : 0
+  
   return (
     <Card
       className={cn(
@@ -62,6 +68,11 @@ export function BotDisplay({
               <span className="font-mono text-xs font-bold">
                 BOT-{botId.slice(-4).toUpperCase()}
               </span>
+              {botType === 'VIP' && (
+                <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">
+                  VIP
+                </span>
+              )}
             </div>
           </div>
 

@@ -25,7 +25,7 @@ export interface OfflineOrder {
 export interface OfflineBot {
   id?: number
   uuid: string // UUID7
-  status: 'IDLE' | 'PROCESSING'
+  status: import('@/lib/schemas/bot').BotStatus
   currentOrderId: string | null
   createdAt: Date
   updatedAt: Date

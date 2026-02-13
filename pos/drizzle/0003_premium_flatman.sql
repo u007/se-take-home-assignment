@@ -1,0 +1,1 @@
+ALTER TABLE `bots` ADD `bot_type` text DEFAULT 'NORMAL' NOT NULL;

@@ -22,6 +22,13 @@
       "when": 1769072437219,
       "tag": "0002_colossal_sentinels",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1770974508081,
+      "tag": "0003_premium_flatman",
+      "breakpoints": true
     }
   ]
 }
